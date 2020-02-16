@@ -133,32 +133,43 @@ class Dstc8DataProcessor(object):
         user_frames = {f["service"]: f for f in turn["frames"]}
         intent = turn["frames"][0]["state"]["active_intent"]
         service = turn["frames"][0]["service"]
-        intent_desc = self._get_description(schemas.get_service_schema(service).intents, intent)["description"]
-        self._write_to_file("Intent", intent, intent_desc, user_utterance, i)
+        if intent == "NONE":
+          self._write_to_file("Intent", intent, None, user_utterance, i, "ACTIVE")
+        else:
+          intent_desc = schemas.get_service_schema(service).get_intent_description(intent)
+          self._write_to_file("Intent", intent, intent_desc, user_utterance, i, "ACTIVE")
+
+        for other_intent in schemas.get_service_schema(service).intents:
+          if other_intent != intent:
+            other_intent_desc = schemas.get_service_schema(service).get_intent_description(other_intent)
+            self._write_to_file("Intent", other_intent, other_intent_desc, user_utterance, i, "ACTIVE")
+        
         for requested_slot in turn["frames"][0]["state"]["requested_slots"]:
-          slot_desc = self._get_description(schemas.get_service_schema(service).slots, requested_slot)["description"]
-          self._write_to_file("Request", requested_slot, slot_desc, user_utterance, r)
+          slot_desc = schemas.get_service_schema(service).get_slot_description(requested_slot)
+          self._write_to_file("Request", requested_slot, slot_desc, user_utterance, r, "YES")
+
+        for other_slot in set(schemas.get_service_schema(service).slots)-set(turn["frames"][0]["state"]["requested_slots"]):
+          other_slot_desc = schemas.get_service_schema(service).get_slot_description(other_slot)
+          self._write_to_file("Request", other_slot, other_slot_desc, user_utterance, r, "NO")
 
         for slot in turn["frames"][0]["state"]["slot_values"]:
-          slot_desc = self._get_description(schemas.get_service_schema(service).slots, slot)["description"]
-          self._write_to_file("Slot", slot, slot_desc, user_utterance, s)
+          slot_desc = schemas.get_service_schema(service).get_slot_description(slot)
+          if turn["frames"][0]["state"]["slot_values"][slot] == "dontcare":
+            self._write_to_file("Slot", slot, slot_desc, user_utterance, s, "DONTCARE")
+          else:
+            self._write_to_file("Slot", slot, slot_desc, user_utterance, s, "ACTIVE")
 
-        examples.extend(turn_examples)
+        for other_slot in set(schemas.get_service_schema(service).slots)-set(turn["frames"][0]["state"]["slot_values"]):
+          other_slot_desc = schemas.get_service_schema(service).get_slot_description(other_slot)
+          self._write_to_file("Slot", other_slot, other_slot_desc, user_utterance, s, "NONE")
     return examples
 
-  def _get_description(self, listofidct, name):
-    print(listofidct)
-    for element in listofidct:
-      print(element)
-      if element["name"] == name:
-        return element
-    return None
 
-  def _write_to_file(self, name, label, description, utterance, writer):
-    if label != None:
-      writer.write("[CLS] "+name+"-"+label+"-"+description+" [SEP] "+ utterance)
+  def _write_to_file(self, task, name, description, utterance, writer, label):
+    if description != None:
+      writer.write(task+"-"+name+"-"+description+"\t"+ utterance+"\t"+label+"\n")
     else:
-      writer.write("[CLS] "+name+"-"+description+" [SEP] "+ utterance)
+      writer.write(task+"-"+name+"\t"+ utterance+ "\t"+label+"\n")
   
 
 a = Dstc8DataProcessor("/Users/stephenwu/nlu/sgddata", 

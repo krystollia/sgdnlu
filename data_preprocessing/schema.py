@@ -20,7 +20,6 @@ from __future__ import division
 from __future__ import print_function
 
 import json
-import tensorflow as tf
 
 
 class ServiceSchema(object):
@@ -31,7 +30,8 @@ class ServiceSchema(object):
     self._description = schema_json["description"]
     self._schema_json = schema_json
     self._service_id = service_id
-
+    self._intent_description = {i["name"]: i["description"] for i in schema_json["intents"]}
+    self._slot_description = {i["name"]: i["description"] for i in schema_json["slots"]}
     # Construct the vocabulary for intents, slots, categorical slots,
     # non-categorical slots and categorical slot values. These vocabs are used
     # for generating indices for their embedding matrix.
@@ -120,13 +120,19 @@ class ServiceSchema(object):
   def get_categorical_slot_value_id(self, slot, value):
     return self._categorical_slot_value_ids[slot][value]
 
+  def get_intent_description(self, intent):
+    return self._intent_description[intent]
+
+  def get_slot_description(self, slot):
+    return self._slot_description[slot]
+
 
 class Schema(object):
   """Wrapper for schemas for all services in a dataset."""
 
   def __init__(self, schema_json_path):
     # Load the schema from the json file.
-    with tf.io.gfile.GFile(schema_json_path) as f:
+    with open(schema_json_path) as f:
       schemas = json.load(f)
     self._services = sorted(schema["service_name"] for schema in schemas)
     self._services_vocab = {v: k for k, v in enumerate(self._services)}
