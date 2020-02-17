@@ -122,8 +122,7 @@ def run_bert_classifier(strategy,
         bert_models.classifier_model(
             bert_config,
             num_classes,
-            max_seq_length,
-            hub_module_url=FLAGS.hub_module_url))
+            max_seq_length))
     classifier_model.optimizer = optimization.create_optimizer(
         initial_lr, steps_per_epoch * epochs, warmup_steps)
     if FLAGS.fp16_implementation == 'graph_rewrite':
@@ -143,7 +142,7 @@ def run_bert_classifier(strategy,
   # training loop is used this is not done automatically and should be
   # done manually by the end user.
   loss_multiplier = 1.0
-  if FLAGS.scale_loss and not use_keras_compile_fit:
+  if FLAGS.scale_loss:
     loss_multiplier = 1.0 / strategy.num_replicas_in_sync
 
   loss_fn = get_loss_fn(num_classes, loss_factor=loss_multiplier)
