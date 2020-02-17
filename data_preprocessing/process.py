@@ -127,41 +127,50 @@ class Dstc8DataProcessor(object):
     prev_states = {}
     examples = []
     for turn_idx, turn in enumerate(dialog["turns"]):
-      # Generate an example for every frame in every user turn.
+      # Generate an multiple data points for every frame in every user turn.
       if turn["speaker"] == "USER":
         user_utterance = turn["utterance"]
         user_frames = {f["service"]: f for f in turn["frames"]}
         intent = turn["frames"][0]["state"]["active_intent"]
         service = turn["frames"][0]["service"]
         if intent == "NONE":
+          #If there is no intent "Thanks I am done" we mark there is no description
           self._write_to_file("Intent", intent, None, user_utterance, i, "ACTIVE")
         else:
+          #Get the description from the schema and then write it to file
           intent_desc = schemas.get_service_schema(service).get_intent_description(intent)
           self._write_to_file("Intent", intent, intent_desc, user_utterance, i, "ACTIVE")
 
-        for other_intent in schemas.get_service_schema(service).intents:
+        #Go through all of the other intents and mark them with INACTIVE tag
+        for other_intent in schemas.get_service_schema(service).intents:         
           if other_intent != intent:
             other_intent_desc = schemas.get_service_schema(service).get_intent_description(other_intent)
-            self._write_to_file("Intent", other_intent, other_intent_desc, user_utterance, i, "ACTIVE")
+            self._write_to_file("Intent", other_intent, other_intent_desc, user_utterance, i, "INACTIVE")
         
+        #Go through all requested slots and mark them with yes and write
         for requested_slot in turn["frames"][0]["state"]["requested_slots"]:
           slot_desc = schemas.get_service_schema(service).get_slot_description(requested_slot)
           self._write_to_file("Request", requested_slot, slot_desc, user_utterance, r, "YES")
 
+        #Go through all unrequested slots and mark them with no and write
         for other_slot in set(schemas.get_service_schema(service).slots)-set(turn["frames"][0]["state"]["requested_slots"]):
           other_slot_desc = schemas.get_service_schema(service).get_slot_description(other_slot)
           self._write_to_file("Request", other_slot, other_slot_desc, user_utterance, r, "NO")
 
+        #Go through all slot values stated
         for slot in turn["frames"][0]["state"]["slot_values"]:
           slot_desc = schemas.get_service_schema(service).get_slot_description(slot)
+          #Mark either dontcare or active
           if turn["frames"][0]["state"]["slot_values"][slot] == "dontcare":
             self._write_to_file("Slot", slot, slot_desc, user_utterance, s, "DONTCARE")
           else:
             self._write_to_file("Slot", slot, slot_desc, user_utterance, s, "ACTIVE")
 
+        #All other slots are none
         for other_slot in set(schemas.get_service_schema(service).slots)-set(turn["frames"][0]["state"]["slot_values"]):
           other_slot_desc = schemas.get_service_schema(service).get_slot_description(other_slot)
           self._write_to_file("Slot", other_slot, other_slot_desc, user_utterance, s, "NONE")
+    
     return examples
 
 
