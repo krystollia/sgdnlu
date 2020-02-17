@@ -250,8 +250,7 @@ def train_squad(strategy,
     """Get Squad model and optimizer."""
     squad_model, core_model = bert_models.squad_model(
         bert_config,
-        max_seq_length,
-        hub_module_url=FLAGS.hub_module_url)
+        max_seq_length)
     squad_model.optimizer = optimization.create_optimizer(
         FLAGS.learning_rate, steps_per_epoch * epochs, warmup_steps)
     if use_float16:
