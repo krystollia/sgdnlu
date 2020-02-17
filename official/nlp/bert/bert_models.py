@@ -29,6 +29,7 @@ from official.nlp.modeling import networks
 from official.nlp.modeling.networks import bert_classifier
 from official.nlp.modeling.networks import bert_pretrainer
 from official.nlp.modeling.networks import bert_span_labeler
+from official.nlp.modeling.networks import bert_unified_labeler
 
 
 class BertPretrainLossAndMetricLayer(tf.keras.layers.Layer):
@@ -302,11 +303,9 @@ def unified_model(bert_config,
         stddev=bert_config.initializer_range)
 
   bert_encoder = get_transformer_encoder(bert_config, max_seq_length)
-  return bert_classifier.BertClassifier(
+  return bert_unified_labeler.BertUnifiedLabeler(
       bert_encoder,
       num_classes=num_labels,
-      dropout_rate=bert_config.hidden_dropout_prob,
-      initializer=initializer), \
-         bert_span_labeler.BertSpanLabeler(
-      network=bert_encoder, initializer=initializer), bert_encoder
+      initializer=initializer,
+      dropout_rate=bert_config.hidden_dropout_prob), bert_encoder
 
