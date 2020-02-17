@@ -1,5 +1,6 @@
+export PYTHONPATH="$PYTHONPATH":.
 export SQUAD_DIR=~/data/squad_orig
-export SQUAD_VERSION=v1.1
+export SQUAD_VERSION=v2.0
 export BERT_BASE_DIR=~/models/tf2.1/keras_bert/uncased_L-12_H-768_A-12
 export OUTPUT_DIR=~/data/squad
 
