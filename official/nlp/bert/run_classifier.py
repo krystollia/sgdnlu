@@ -111,8 +111,7 @@ def run_bert_classifier(strategy,
                         train_input_fn,
                         eval_input_fn,
                         custom_callbacks=None,
-                        run_eagerly=False,
-                        use_keras_compile_fit=False):
+                        run_eagerly=False):
   """Run BERT classifier training using low-level API."""
   max_seq_length = input_meta_data['max_seq_length']
   num_classes = input_meta_data['num_labels']
@@ -213,8 +212,7 @@ def export_classifier(model_export_path, input_meta_data,
   model_saving_utils.export_bert_model(
       model_export_path,
       model=classifier_model,
-      checkpoint_dir=model_dir,
-      restore_model_using_load_weights=restore_model_using_load_weights)
+      checkpoint_dir=model_dir)
 
 
 def run_bert(strategy,
@@ -261,8 +259,7 @@ def run_bert(strategy,
       FLAGS.init_checkpoint,
       train_input_fn,
       eval_input_fn,
-      run_eagerly=FLAGS.run_eagerly,
-      use_keras_compile_fit=FLAGS.use_keras_compile_fit)
+      run_eagerly=FLAGS.run_eagerly)
 
   if FLAGS.model_export_path:
     # As Keras ModelCheckpoint callback used with Keras compile/fit() API
@@ -270,8 +267,7 @@ def run_bert(strategy,
     # use model.load_weights() when Keras compile/fit() is used.
     model_saving_utils.export_bert_model(
         FLAGS.model_export_path,
-        model=trained_model,
-        restore_model_using_load_weights=FLAGS.use_keras_compile_fit)
+        model=trained_model)
   return trained_model
 
 
