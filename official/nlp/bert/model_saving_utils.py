@@ -28,8 +28,7 @@ import typing
 
 def export_bert_model(model_export_path: typing.Text,
                       model: tf.keras.Model,
-                      checkpoint_dir: typing.Optional[typing.Text] = None,
-                      restore_model_using_load_weights: bool = False) -> None:
+                      checkpoint_dir: typing.Optional[typing.Text] = None) -> None:
   """Export BERT model for serving which does not include the optimizer.
 
   Arguments:
@@ -55,24 +54,15 @@ def export_bert_model(model_export_path: typing.Text,
     raise ValueError('model must be a tf.keras.Model object.')
 
   if checkpoint_dir:
-    # Keras compile/fit() was used to save checkpoint using
-    # model.save_weights().
-    if restore_model_using_load_weights:
-      model_weight_path = os.path.join(checkpoint_dir, 'checkpoint')
-      assert tf.io.gfile.exists(model_weight_path)
-      model.load_weights(model_weight_path)
+    checkpoint = tf.train.Checkpoint(model=model)
 
-    # tf.train.Checkpoint API was used via custom training loop logic.
-    else:
-      checkpoint = tf.train.Checkpoint(model=model)
-
-      # Restores the model from latest checkpoint.
-      latest_checkpoint_file = tf.train.latest_checkpoint(checkpoint_dir)
-      assert latest_checkpoint_file
-      logging.info('Checkpoint file %s found and restoring from '
-                   'checkpoint', latest_checkpoint_file)
-      checkpoint.restore(
-          latest_checkpoint_file).assert_existing_objects_matched()
+    # Restores the model from latest checkpoint.
+    latest_checkpoint_file = tf.train.latest_checkpoint(checkpoint_dir)
+    assert latest_checkpoint_file
+    logging.info('Checkpoint file %s found and restoring from '
+                 'checkpoint', latest_checkpoint_file)
+    checkpoint.restore(
+        latest_checkpoint_file).assert_existing_objects_matched()
 
   model.save(model_export_path, include_optimizer=False, save_format='tf')
 
