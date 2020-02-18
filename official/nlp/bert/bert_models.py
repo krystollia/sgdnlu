@@ -29,7 +29,6 @@ from official.nlp.modeling import networks
 from official.nlp.modeling.networks import bert_classifier
 from official.nlp.modeling.networks import bert_pretrainer
 from official.nlp.modeling.networks import bert_span_labeler
-from official.nlp.modeling.networks import bert_unified_labeler
 
 
 class BertPretrainLossAndMetricLayer(tf.keras.layers.Layer):
@@ -187,39 +186,10 @@ def pretrain_model(bert_config,
   return keras_model, transformer_encoder
 
 
-class BertSquadLogitsLayer(tf.keras.layers.Layer):
-  """Returns a layer that computes custom logits for BERT squad model."""
-
-  def __init__(self, initializer=None, **kwargs):
-    super(BertSquadLogitsLayer, self).__init__(**kwargs)
-    self.initializer = initializer
-
-  def build(self, unused_input_shapes):
-    """Implements build() for the layer."""
-    self.final_dense = tf.keras.layers.Dense(
-        units=2, kernel_initializer=self.initializer, name='final_dense')
-    super(BertSquadLogitsLayer, self).build(unused_input_shapes)
-
-  def call(self, inputs):
-    """Implements call() for the layer."""
-    sequence_output = inputs
-
-    input_shape = tf_utils.get_shape_list(
-        sequence_output, name='sequence_output_tensor')
-    sequence_length = input_shape[1]
-    num_hidden_units = input_shape[2]
-
-    final_hidden_input = tf.reshape(sequence_output, [-1, num_hidden_units])
-    logits = self.final_dense(final_hidden_input)
-    logits = tf.reshape(logits, [-1, sequence_length, 2])
-    logits = tf.transpose(logits, [2, 0, 1])
-    unstacked_logits = tf.unstack(logits, axis=0)
-    return unstacked_logits[0], unstacked_logits[1]
-
-
 def squad_model(bert_config,
                 max_seq_length,
-                initializer=None):
+                initializer=None,
+                hub_module_url=None):
   """Returns BERT Squad model along with core BERT model to import weights.
 
   Args:
@@ -236,8 +206,28 @@ def squad_model(bert_config,
   if initializer is None:
     initializer = tf.keras.initializers.TruncatedNormal(
         stddev=bert_config.initializer_range)
+  if not hub_module_url:
+    bert_encoder = get_transformer_encoder(bert_config, max_seq_length)
+    return bert_span_labeler.BertSpanLabeler(
+        network=bert_encoder, initializer=initializer), bert_encoder
 
-  bert_encoder = get_transformer_encoder(bert_config, max_seq_length)
+  input_word_ids = tf.keras.layers.Input(
+      shape=(max_seq_length,), dtype=tf.int32, name='input_word_ids')
+  input_mask = tf.keras.layers.Input(
+      shape=(max_seq_length,), dtype=tf.int32, name='input_mask')
+  input_type_ids = tf.keras.layers.Input(
+      shape=(max_seq_length,), dtype=tf.int32, name='input_type_ids')
+  core_model = hub.KerasLayer(hub_module_url, trainable=True)
+  pooled_output, sequence_output = core_model(
+      [input_word_ids, input_mask, input_type_ids])
+  bert_encoder = tf.keras.Model(
+      inputs={
+          'input_word_ids': input_word_ids,
+          'input_mask': input_mask,
+          'input_type_ids': input_type_ids,
+      },
+      outputs=[sequence_output, pooled_output],
+      name='core_model')
   return bert_span_labeler.BertSpanLabeler(
       network=bert_encoder, initializer=initializer), bert_encoder
 
@@ -245,7 +235,8 @@ def squad_model(bert_config,
 def classifier_model(bert_config,
                      num_labels,
                      max_seq_length,
-                     initializer=None):
+                     final_layer_initializer=None,
+                     hub_module_url=None):
   """BERT classifier model in functional API style.
 
   Construct a Keras model for predicting `num_labels` outputs from an input with
@@ -264,48 +255,40 @@ def classifier_model(bert_config,
     Combined prediction model (words, mask, type) -> (one-hot labels)
     BERT sub-model (words, mask, type) -> (bert_outputs)
   """
-  if initializer is None:
+  if final_layer_initializer is not None:
+    initializer = final_layer_initializer
+  else:
     initializer = tf.keras.initializers.TruncatedNormal(
         stddev=bert_config.initializer_range)
 
-  bert_encoder = get_transformer_encoder(bert_config, max_seq_length)
-  return bert_classifier.BertClassifier(
-      bert_encoder,
-      num_classes=num_labels,
-      dropout_rate=bert_config.hidden_dropout_prob,
-      initializer=initializer), bert_encoder
+  if not hub_module_url:
+    bert_encoder = get_transformer_encoder(bert_config, max_seq_length)
+    return bert_classifier.BertClassifier(
+        bert_encoder,
+        num_classes=num_labels,
+        dropout_rate=bert_config.hidden_dropout_prob,
+        initializer=initializer), bert_encoder
 
+  input_word_ids = tf.keras.layers.Input(
+      shape=(max_seq_length,), dtype=tf.int32, name='input_word_ids')
+  input_mask = tf.keras.layers.Input(
+      shape=(max_seq_length,), dtype=tf.int32, name='input_mask')
+  input_type_ids = tf.keras.layers.Input(
+      shape=(max_seq_length,), dtype=tf.int32, name='input_type_ids')
+  bert_model = hub.KerasLayer(hub_module_url, trainable=True)
+  pooled_output, _ = bert_model([input_word_ids, input_mask, input_type_ids])
+  output = tf.keras.layers.Dropout(rate=bert_config.hidden_dropout_prob)(
+      pooled_output)
 
-def unified_model(bert_config,
-                  num_labels,
-                  max_seq_length,
-                  initializer=None):
-  """BERT unified model in functional API style.
-
-  Construct a Keras model for predicting `num_labels` outputs from an input with
-  maximum sequence length `max_seq_length`, as well as
-
-  Args:
-    bert_config: BertConfig or AlbertConfig, the config defines the core
-      BERT or ALBERT model.
-    num_labels: integer, the number of classes.
-    max_seq_length: integer, the maximum input sequence length.
-    final_layer_initializer: Initializer for final dense layer. Defaulted
-      TruncatedNormal initializer.
-    hub_module_url: TF-Hub path/url to Bert module.
-
-  Returns:
-    Combined prediction model (words, mask, type) -> (one-hot labels)
-    BERT sub-model (words, mask, type) -> (bert_outputs)
-  """
-  if initializer is None:
-    initializer = tf.keras.initializers.TruncatedNormal(
-        stddev=bert_config.initializer_range)
-
-  bert_encoder = get_transformer_encoder(bert_config, max_seq_length)
-  return bert_unified_labeler.BertUnifiedLabeler(
-      bert_encoder,
-      num_classes=num_labels,
-      initializer=initializer,
-      dropout_rate=bert_config.hidden_dropout_prob), bert_encoder
-
+  output = tf.keras.layers.Dense(
+      num_labels,
+      kernel_initializer=initializer,
+      name='output')(
+          output)
+  return tf.keras.Model(
+      inputs={
+          'input_word_ids': input_word_ids,
+          'input_mask': input_mask,
+          'input_type_ids': input_type_ids
+      },
+      outputs=output), bert_model

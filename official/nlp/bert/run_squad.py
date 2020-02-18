@@ -183,7 +183,9 @@ def predict_squad_customized(strategy, input_meta_data, bert_config,
     # Prediction always uses float32, even if training uses mixed precision.
     tf.keras.mixed_precision.experimental.set_policy('float32')
     squad_model, _ = bert_models.squad_model(
-        bert_config, input_meta_data['max_seq_length'])
+        bert_config,
+        input_meta_data['max_seq_length'],
+        hub_module_url=FLAGS.hub_module_url)
 
   checkpoint_path = tf.train.latest_checkpoint(FLAGS.model_dir)
   logging.info('Restoring checkpoints from %s', checkpoint_path)
@@ -250,7 +252,8 @@ def train_squad(strategy,
     """Get Squad model and optimizer."""
     squad_model, core_model = bert_models.squad_model(
         bert_config,
-        max_seq_length)
+        max_seq_length,
+        hub_module_url=FLAGS.hub_module_url)
     squad_model.optimizer = optimization.create_optimizer(
         FLAGS.learning_rate, steps_per_epoch * epochs, warmup_steps)
     if use_float16:
