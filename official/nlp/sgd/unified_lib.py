@@ -35,13 +35,16 @@ class UnifiedExample(object):
   """A single training/test example for unified sequence classification.
      Includes both span labeler and classifier on the [CLS]
      For examples without an answer, the start and end position are -1.
+
+     It will be used for both intent finding, and slot filling, so that
+     we can treat them uniformly.
+     when start_position and end position is None, the data is prepared for classifier only.
   """
 
   def __init__(self,
                qas_id,
                question_text,
                doc_tokens,
-               orig_answer_text=None,
                start_position=None,
                end_position=None,
                label=None):
@@ -49,7 +52,6 @@ class UnifiedExample(object):
     self.qas_id = qas_id
     self.question_text = question_text
     self.doc_tokens = doc_tokens
-    self.orig_answer_text = orig_answer_text
     self.start_position = start_position
     self.end_position = end_position
     self.label = label
@@ -139,8 +141,6 @@ class FeatureWriter(object):
 
 
 
-
-
 def convert_examples_to_features(examples,
                                  tokenizer,
                                  max_seq_length,
@@ -148,7 +148,8 @@ def convert_examples_to_features(examples,
                                  max_query_length,
                                  is_training,
                                  output_fn,
-                                 batch_size=None):
+                                 batch_size=None,
+                                 lbl_tokenizer=None):
   """Loads a data file into a list of `InputBatch`s."""
 
   base_id = 1000000000
