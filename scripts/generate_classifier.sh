@@ -1,9 +1,9 @@
-export GLUE_DIR=~/data/glue_data
-export BERT_BASE_DIR=~/models/tf2.1/keras_bert/uncased_L-12_H-768_A-12
+export GLUE_DIR=~/otherdata
+export BERT_BASE_DIR=~/uncased_L-12_H-768_A-12
 
 export TASK_NAME=MRPC
-export OUTPUT_DIR=~/data/glue
-python official/nlp/bert/create_finetuning_data.py \
+export OUTPUT_DIR=~/glueconverted
+python3 official/nlp/bert/create_finetuning_data.py \
  --input_data_dir=${GLUE_DIR}/${TASK_NAME}/ \
  --vocab_file=${BERT_BASE_DIR}/vocab.txt \
  --train_data_output_path=${OUTPUT_DIR}/${TASK_NAME}_train.tf_record \
