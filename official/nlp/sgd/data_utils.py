@@ -30,6 +30,28 @@ import tensorflow as tf
 from official.nlp.sgd import schema
 from official.nlp.bert import tokenization
 
+# this script is based on the sgd baseline implementation.
+
+#
+# The current sgd is designed with assumption that user/system utterances are first order
+# operation on the frames in term of fillings. This view, while works, ignored many angles
+# that apparently different use cases are actually the same things, which can greatly
+# reduce the modeling complexity,
+#
+# The main issue is we need to treat the frame filling as a high order process, meaning we
+# stack more than one layer of filling operators, and these operators can operate the frame
+# filling in the composite fashion.
+#
+# 1. requested-slot should be small intent for query some slots, which has nothing to do with
+#    host frame. The difference there is the slot name for the origin intent because slot value
+#    value for this meta intent.
+# 2. there is single value list selection skills that is hidden in many conversations. This is
+#    started by the user requesting some slots, then system start to offer the item off the list.
+#    User can now refine it, or asking for details, pick one or reject the current item (which
+#    in turn look for another one). Again this is an high order/meta constructs which need to
+#    be handled in a decomposable fashion in order to greatly increase the reusability.
+#
+
 
 # Dimension of the embedding for intents, slots and categorical slot values in
 # the schema. Should be equal to BERT's hidden_size.
@@ -74,19 +96,6 @@ FILE_RANGES = {
 # metrics.
 PER_FRAME_OUTPUT_FILENAME = "dialogues_and_metrics.json"
 
-
-class PaddingInputExample(object):
-  """Fake example so the num input examples is a multiple of the batch size.
-
-  When running eval/predict on the TPU, we need to pad the number of examples
-  to be a multiple of the batch size, because the TPU requires a fixed batch
-  size. The alternative is to drop the last batch, which is bad because it means
-  the entire output data won't be generated.
-
-  We use this class instead of `None` because treating `None` as padding
-  battches could cause silent errors.
-  """
-  pass
 
 
 def load_dialogues(dialog_json_filepaths):
@@ -153,6 +162,7 @@ class Dstc8DataProcessor(object):
     dialog_id = dialog["dialogue_id"]
     prev_states = {}
     examples = []
+    history = []
     for turn_idx, turn in enumerate(dialog["turns"]):
       # Generate an example for every frame in every user turn.
       if turn["speaker"] == "USER":
@@ -166,9 +176,9 @@ class Dstc8DataProcessor(object):
           system_utterance = ""
           system_frames = {}
         turn_id = "{}-{}-{:02d}".format(dataset, dialog_id, turn_idx)
-        turn_examples, prev_states = self._create_examples_from_turn(
+        turn_examples, prev_states, history = self._create_examples_from_turn(
             turn_id, system_utterance, user_utterance, system_frames,
-            user_frames, prev_states, schemas)
+            user_frames, prev_states, history, schemas)
         examples.extend(turn_examples)
     return examples
 
@@ -184,7 +194,7 @@ class Dstc8DataProcessor(object):
 
   def _create_examples_from_turn(self, turn_id, system_utterance,
                                  user_utterance, system_frames, user_frames,
-                                 prev_states, schemas):
+                                 prev_states, history, schemas):
     """Creates an example for each frame in the user turn."""
     system_tokens, system_alignments, system_inv_alignments = (
         self._tokenize(system_utterance))
@@ -230,7 +240,7 @@ class Dstc8DataProcessor(object):
       example.add_requested_slots(user_frame)
       example.add_intents(user_frame)
       examples.append(example)
-    return examples, states
+    return examples, states, history
 
   def _find_subword_indices(self, slot_values, utterance, char_slot_spans,
                             alignments, subwords, bias):
@@ -300,27 +310,6 @@ class Dstc8DataProcessor(object):
         zip(bert_tokens_start_chars, bert_tokens_end_chars))
     return bert_tokens, alignments, inverse_alignments
 
-  def get_num_dialog_examples(self, dataset):
-    """Get the number of dilaog examples in the data split.
-
-    Args:
-      dataset: str. can be "train", "dev", or "test".
-
-    Returns:
-      example_count: int. number of examples in the specified dataset.
-    """
-    example_count = 0
-    dialog_paths = [
-        os.path.join(self.dstc8_data_dir, dataset,
-                     "dialogues_{:03d}.json".format(i))
-        for i in self._file_ranges[dataset]
-    ]
-    dst_set = load_dialogues(dialog_paths)
-    for dialog in dst_set:
-      for turn in dialog["turns"]:
-        if turn["speaker"] == "USER":
-          example_count += len(turn["frames"])
-    return example_count
 
 
 class InputExample(object):
@@ -637,63 +626,6 @@ def _create_int_feature(values):
   return f
 
 
-# Modified from run_classifier.file_based_convert_examples_to_features in the
-# public bert model repo.
-# https://github.com/google-research/bert/blob/master/run_classifier.py.
-def file_based_convert_examples_to_features(dial_examples, output_file):
-  """Convert a set of `InputExample`s to a TFRecord file."""
-
-  writer = tf.io.TFRecordWriter(output_file)
-
-  for (ex_index, example) in enumerate(dial_examples):
-    if ex_index % 10000 == 0:
-      tf.compat.v1.logging.info("Writing example %d of %d", ex_index,
-                                len(dial_examples))
-
-    if isinstance(example, PaddingInputExample):
-      ex = InputExample()
-    else:
-      ex = example
-
-    features = collections.OrderedDict()
-
-    features["example_id"] = tf.train.Feature(
-        bytes_list=tf.train.BytesList(value=[ex.example_id.encode("utf-8")]))
-    features["is_real_example"] = _create_int_feature([int(ex.is_real_example)])
-    features["service_id"] = _create_int_feature([ex.service_schema.service_id])
-
-    features["utt"] = _create_int_feature(ex.utterance_ids)
-    features["utt_seg"] = _create_int_feature(ex.utterance_segment)
-    features["utt_mask"] = _create_int_feature(ex.utterance_mask)
-
-    features["cat_slot_num"] = _create_int_feature([ex.num_categorical_slots])
-    features["cat_slot_status"] = _create_int_feature(
-        ex.categorical_slot_status)
-    features["cat_slot_value_num"] = _create_int_feature(
-        ex.num_categorical_slot_values)
-    features["cat_slot_value"] = _create_int_feature(ex.categorical_slot_values)
-
-    features["noncat_slot_num"] = _create_int_feature(
-        [ex.num_noncategorical_slots])
-    features["noncat_slot_status"] = _create_int_feature(
-        ex.noncategorical_slot_status)
-    features["noncat_slot_value_start"] = _create_int_feature(
-        ex.noncategorical_slot_value_start)
-    features["noncat_slot_value_end"] = _create_int_feature(
-        ex.noncategorical_slot_value_end)
-    features["noncat_alignment_start"] = _create_int_feature(ex.start_char_idx)
-    features["noncat_alignment_end"] = _create_int_feature(ex.end_char_idx)
-
-    features["req_slot_num"] = _create_int_feature([ex.num_slots])
-    features["req_slot_status"] = _create_int_feature(ex.requested_slot_status)
-
-    features["intent_num"] = _create_int_feature([ex.num_intents])
-    features["intent_status"] = _create_int_feature(ex.intent_status)
-
-    tf_example = tf.train.Example(features=tf.train.Features(feature=features))
-
-    writer.write(tf_example.SerializeToString())
-  writer.close()
 
 
 def normalize_list_length(input_list, target_len, padding_unit):
