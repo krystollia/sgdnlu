@@ -25,7 +25,7 @@ import json
 import os
 import re
 
-import schema
+from official.nlp.sgd import schema
 
 
 
@@ -113,15 +113,16 @@ class Dstc8DataProcessor(object):
     r = open("response.txt", "w")
     s = open("status.txt", "w")
 
+    u = open("utterance.txt", "w")
     dialogs = load_dialogues(dialog_paths)
     schema_path = os.path.join(self.dstc8_data_dir, dataset, "schema.json")
     schemas = schema.Schema(schema_path)
 
     examples = []
     for dialog_idx, dialog in enumerate(dialogs):
-      self._create_examples_from_dialog(dialog, schemas, dataset, i, r, s)
+      self._create_examples_from_dialog(dialog, schemas, dataset, i, r, s, u)
 
-  def _create_examples_from_dialog(self, dialog, schemas, dataset, i, r, s):
+  def _create_examples_from_dialog(self, dialog, schemas, dataset, i, r, s, u):
     """Create examples for every turn in the dialog."""
     dialog_id = dialog["dialogue_id"]
     prev_states = {}
@@ -130,6 +131,7 @@ class Dstc8DataProcessor(object):
       # Generate an multiple data points for every frame in every user turn.
       if turn["speaker"] == "USER":
         user_utterance = turn["utterance"]
+        u.write("%s\t%s\t%s\n" % (user_utterance, dialog_id, turn_idx))
         user_frames = {f["service"]: f for f in turn["frames"]}
         intent = turn["frames"][0]["state"]["active_intent"]
         service = turn["frames"][0]["service"]
@@ -181,7 +183,7 @@ class Dstc8DataProcessor(object):
       writer.write(label+"\t"+"0"+"\t"+"0"+"\t"+task+"-"+name+"\t"+ utterance+"\n")
   
 
-a = Dstc8DataProcessor("/Users/stephenwu/nlu/sgddata", 
+a = Dstc8DataProcessor("./sgddata",
         FILE_RANGES["dstc8_all"]["train"],
         FILE_RANGES["dstc8_all"]["dev"],
         FILE_RANGES["dstc8_all"]["test"])
