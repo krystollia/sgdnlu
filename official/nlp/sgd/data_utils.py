@@ -32,25 +32,6 @@ from official.nlp.bert import tokenization
 
 # this script is based on the sgd baseline implementation.
 
-#
-# The current sgd is designed with assumption that user/system utterances are first order
-# operation on the frames in term of fillings. This view, while works, ignored many angles
-# that apparently different use cases are actually the same things, which can greatly
-# reduce the modeling complexity,
-#
-# The main issue is we need to treat the frame filling as a high order process, meaning we
-# stack more than one layer of filling operators, and these operators can operate the frame
-# filling in the composite fashion.
-#
-# 1. requested-slot should be small intent for query some slots, which has nothing to do with
-#    host frame. The difference there is the slot name for the origin intent because slot value
-#    value for this meta intent.
-# 2. there is single value list selection skills that is hidden in many conversations. This is
-#    started by the user requesting some slots, then system start to offer the item off the list.
-#    User can now refine it, or asking for details, pick one or reject the current item (which
-#    in turn look for another one). Again this is an high order/meta constructs which need to
-#    be handled in a decomposable fashion in order to greatly increase the reusability.
-#
 
 
 # Dimension of the embedding for intents, slots and categorical slot values in

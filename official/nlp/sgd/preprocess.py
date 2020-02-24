@@ -21,12 +21,61 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
+import copy
 import json
 import os
 import re
 
 from official.nlp.sgd import schema
 from official.nlp.bert import tokenization
+
+# this script is based on the sgd baseline implementation.
+
+"""
+We need to handle these different cases.
+"CONFIRM",
+"GOODBYE",
+"INFORM",
+"INFORM_COUNT",
+"NOTIFY_FAILURE",
+"NOTIFY_SUCCESS",
+"OFFER",
+"OFFER_INTENT",
+"REQUEST",
+"REQ_MORE",
+"""
+
+#
+# The current sgd is designed with assumption that user/system utterances are first order
+# operation on the frames in term of fillings. This view, while works, ignored many angles
+# that apparently different use cases are actually the same things, which can greatly
+# reduce the modeling complexity,
+#
+# The main issue is we need to treat the frame filling as a high order process, meaning we
+# stack more than one layer of filling operators, and these operators can operate the frame
+# filling in the composite fashion.
+#
+# 1. requested-slot should be small intent for query some slots, which has nothing to do with
+#    host frame. The difference there is the slot name for the origin intent because slot value
+#    value for this meta intent.
+# 2. there is single value list selection skills that is hidden in many conversations. This is
+#    started by the user requesting some slots, then system start to offer the item off the list.
+#    User can now refine it, or asking for details, pick one or reject the current item (which
+#    in turn look for another one). Again this is an high order/meta constructs which need to
+#    be handled in a decomposable fashion in order to greatly increase the reusability.
+#
+
+
+"""
+To generate the training examples, we have to go over all the possible the scenarios. 
+The main the assumption of the logical conversational interface for services is that we build
+common understanding of what user wants in form of frame filling.
+
+Frame are stacked together to build the common understanding, each is serving as the context
+for the frame on the top.
+
+"""
+
 
 """
 from official.nlp.sgd import preprocess
@@ -92,20 +141,18 @@ class UnifiedExample(object):
      when start_position and end position is None, the data is prepared for classifier only.
   """
 
-    def __init__(self,
-                 qas_id,
-                 doc_tokens,
-                 question_text=None,
-                 start_position=None,
-                 end_position=None,
-                 label=None):
-        self.is_impossible = None
+    def __init__(self, qas_id, doc_tokens):
+        self.is_intent = True
+        self.service = None
+        self.slot = None
+        self.context = None
         self.qas_id = qas_id
-        self.question_text = question_text
+        self.question_text = None
         self.doc_tokens = doc_tokens
-        self.start_position = start_position
-        self.end_position = end_position
-        self.label = label
+        self.start_position = None
+        self.end_position = None
+        self.label = None
+        self.weight = 1.0
 
     def __str__(self):
         return self.__repr__()
@@ -122,6 +169,10 @@ class UnifiedExample(object):
             s += ", end_position: %d" % self.end_position
         if self.label:
             s += ", label: %s" % self.label
+        if self.service:
+            s += ", service: %s" % self.service
+        if self.slot:
+            s += ", slot: %s" % self.slot
         return s
 
 
@@ -229,14 +280,14 @@ class Dstc8DataProcessor(object):
             writer.write(label + "\t" + "0" + "\t" + "0" + "\t" + task + "-" + name + "\t" + utterance + "\n")
 
 
-class WDstc8DataProcessor(object):
+class XDstc8DataProcessor(object):
     """Data generator for dstc8 dialogues."""
 
     def __init__(self,
                  dstc8_data_dir,
                  collection,
-                 vocab_file,
-                 do_lower_case,
+                 vocab_file="./models/uncased_L-12_H-768_A-12/vocab.txt",
+                 do_lower_case=True,
                  max_seq_length=DEFAULT_MAX_SEQ_LENGTH, ):
         self.dstc8_data_dir = dstc8_data_dir
         self._file_ranges = FILE_RANGES[collection]
@@ -273,7 +324,8 @@ class WDstc8DataProcessor(object):
         """Create examples for every turn in the dialog."""
         dialog_id = dialog["dialogue_id"]
         prev_states = {}
-        examples = []
+        iexamples = []
+        sexamples = []
         history = []
         turns = dialog["turns"]
         for turn_idx, turn in enumerate(dialog["turns"]):
@@ -289,11 +341,38 @@ class WDstc8DataProcessor(object):
                     system_utterance = ""
                     system_frames = {}
                 turn_id = "{}-{}-{:02d}".format(dataset, dialog_id, turn_idx)
-                turn_examples, prev_states, history = self._create_examples_from_turn(
+                turn_i_examples, turn_s_examples, prev_states, history = self._create_examples_from_turn(
                     turns, turn_id, system_utterance, user_utterance, system_frames,
                     user_frames, prev_states, history, schemas)
-                examples.extend(turn_examples)
-        return examples
+                iexamples.extend(turn_i_examples)
+                sexamples.extend(turn_s_examples)
+        return iexamples, sexamples
+
+    def _count_contained(self, update_keys, slots):
+        """
+        Test whether the update is fully or partially contained in the slots.
+        :param updates:
+        :param slots:
+        :return: number of slot are contained in the update.
+        """
+        count = 0
+        for match in slots:
+            if match["slot"] in update_keys: count += 1
+        return count
+
+    def _filter(self, actions, action_type):
+        res = []
+        for action in actions:
+            if action["act"] == action_type:
+                res.append(action)
+        return res
+
+    def _build_negative_intent_examples(self, iexamples, list_of_intents):
+        res = []
+        for intent in list_of_intents:
+            res.add()
+        iexamples.extend([])
+
 
     def _create_examples_from_turn(self, turns, turn_id, system_utterance,
                                    user_utterance, system_frames, user_frames,
@@ -303,16 +382,25 @@ class WDstc8DataProcessor(object):
 
         states = {}
         base_example = UnifiedExample(turn_id, user_tokens)
-        examples = []
+        iexamples = []
+        sexamples = []
+
+        multiframe = len(user_frames) != 1
         for service, user_frame in user_frames.items():
             # Create an example for this service.
-            example = base_example.copy()
+            example = copy.copy(base_example)
             example.qas_id = "{}-{}".format(turn_id, service)
 
+            service_schema = schemas.get_service_schema(service)
+
             system_frame = system_frames.get(service, None)
-            state = user_frame["state"]["slot_values"]
-            state_update = self._get_state_update(state, prev_states.get(service, {}))
-            states[service] = state
+            curr_state = user_frame["state"]
+            prev_state = prev_states.get(service, {})
+            state_update = self._get_state_update(curr_state, prev_state)
+            states[service] = curr_state
+
+            # if the state update in the slots, we have training example for this intent
+            user_slots = [] if "slots" not in user_frame.keys() else user_frame["slots"]
 
             user_span_boundaries = self._find_subword_indices(
                 state_update, user_utterance, user_frame["slots"], user_alignments,
@@ -325,15 +413,149 @@ class WDstc8DataProcessor(object):
             else:
                 system_span_boundaries = {}
 
-            examples.append(example)
-            return examples, states, history
+            # we need to first figure out when is the uptick of the intent.
+            old_active_intent = "" if len(prev_state) == 0 else prev_state["active_intent"]
+            new_active_intent = curr_state["active_intent"]
+
+
+            # for intent, we check couple things:
+            # 1. if there is the no active state for this service last user turn. And we saw all
+            #    all the slots are mentioned here, it is an direct hit, we should create the
+            #    training example as is.
+            # whether there is offer: offer has an yes or no expectation.
+            mentioned_count = self._count_contained(state_update.keys(), user_slots)
+            system_actions = [] if system_frame is None or "actions" not in system_frame.keys() else system_frame["actions"]
+            offerred = self._filter(system_actions, "OFFER")
+            requested = self._filter(system_actions, "REQUEST")
+            confirmed = self._filter(system_actions, "CONFIRM")
+            success_notified = self._filter(system_actions, "NOTIFY_SUCCESS")
+            more_requested = self._filter(system_actions, "REQ_MORE")
+            intent_offered = self._filter(system_actions, "OFFER_INTENT")
+            informed = self._filter(system_actions, "INFORM")
+            nofferred = len(offerred)
+            nrequested = len(requested)
+            nconfirmed = len(confirmed)
+
+            mixing = nofferred*nrequested + nofferred*nconfirmed + nrequested*nconfirmed
+
+            if mixing != 0:
+                # Make sure that we do not get different action from system.
+                raise ValueError("this is not fun")
+
+            # to make thing easy to check, we only focus on 00014.
+            #if turn_id.find("00014") < 0: continue
+
+            # the state change is fully explained by user utterance.
+            if len(offerred) == 0 and len(requested) == 0 and len(confirmed) == 0:
+                if mentioned_count > 0 and len(state_update) != 0:
+                    example.question_text = service_schema.description
+                    example.label = 1
+                    # We use weight to nudge the decision a bit as we do not
+                    # have ground truth one way or another.
+                    if old_active_intent != new_active_intent:
+                        example.weight = 1.0
+                    else:
+                        example.weight = 0.5
+                    continue
+                elif len(success_notified) != 0:
+                    # we do not need to do much? or we check the ack as well.
+                    example.question_text = "acknowledge"
+                    example.context = "Notified success"
+                    example.label = 1
+                    continue
+                elif len(more_requested) != 0:
+                    example.question_text = "no"
+                    example.context = "request more"
+                    example.label = 1
+                    continue
+                elif len(intent_offered) != 0:
+                    intent = intent_offered[0]["values"]
+                    example.context = "binary offer"
+                    example.label = 1
+                    if intent == new_active_intent:
+                        example.question_text = "yes"
+                    else:
+                        example.question_text = "no"
+                    continue
+                elif len(informed) != 0:
+                    example.question_text = "acknowledge"
+                    example.context = "Notified success"
+                    example.label = 1
+                    continue
+                else:
+                    print(system_actions)
+                    print(mentioned_count)
+                    print(turn_id)
+                    print(service)
+                    print(len(user_frames))
+                    print(prev_state)
+                    print(curr_state)
+                    print(state_update)
+                    print(user_utterance)
+                    print("\n")
+                    raise ValueError("something is wrong here?")
+
+            # Now deal with offer, if the system have offered, and user accepted or not.
+            if len(offerred) != 0 and len(requested) == 0 and len(confirmed) == 0:
+                accepted_offer_count = self._count_contained(state_update, system_actions)
+                example.context = "listed offers"
+                example.question_text = "take the offer"
+                # Now use accepted some offer, so it is a yes.
+                if accepted_offer_count != 0:
+                    example.label = 1
+                    continue
+                else:
+                    example.label = 0
+                    continue
+
+            if len(offerred) == 0 and len(requested) != 0 and len(confirmed) == 0:
+                example.context = requested
+                continue
+
+            if len(offerred) == 0 and len(requested) == 0 and len(confirmed) != 0:
+                example.context = requested
+                continue
+            else:
+                print(confirmed)
+                print(mentioned_count)
+                print(len(state_update))
+                print(turn_id)
+                print(service)
+                print(len(user_frames))
+                print(state_update)
+                print(user_utterance)
+                print("\n")
+                print("\n")
+                print("\n")
+                raise ValueError("something is wrong here?")
+
+
+
+
+
+            print(mentioned_count)
+            print(len(state_update))
+            print(turn_id)
+            print(service)
+            print(len(user_frames))
+            print(state_update)
+            print(user_utterance)
+            print("\n")
+            print("\n")
+            print("\n")
+
+            iexamples.append(example)
+        return iexamples, sexamples, states, history
 
     def _get_state_update(self, current_state, prev_state):
-        """This is not nearly enough, we need to move the requested slot and
-    among other things """
-        state_update = dict(current_state)
-        for slot, values in current_state.items():
-            if slot in prev_state and prev_state[slot][0] in values:
+        """
+        This is not nearly enough, we need to move the requested slot and
+        among other things
+        """
+        state_update = dict(current_state["slot_values"])
+        prev_state_svs = {} if "slot_values" not in prev_state else prev_state["slot_values"]
+        for slot, values in current_state["slot_values"].items():
+            if slot in prev_state_svs and prev_state_svs[slot][0] in values:
                 # Remove the slot from state if its value didn't change.
                 state_update.pop(slot)
         return state_update
@@ -414,83 +636,3 @@ def _naive_tokenize(s):
     # of all the tokens in the sequence will be the original string.
     seq_tok = [tok for tok in re.split(r"([^a-zA-Z0-9])", s) if tok]
     return seq_tok
-
-
-class XDstc8DataProcessor(object):
-    """Data generator for dstc8 dialogues."""
-
-    def __init__(self,
-                 dstc8_data_dir, collection):
-        self.dstc8_data_dir = dstc8_data_dir
-        self._file_ranges = FILE_RANGES[collection]
-
-    def get_dialog_examples(self, dataset):
-        """Return a list of `InputExample`s of the data splits' dialogues.
-
-        Args:
-          dataset: str. can be "train", "dev", or "test".
-
-        Returns:
-          examples: a list of `InputExample`s.
-        """
-        dialog_paths = [
-            os.path.join(self.dstc8_data_dir, dataset,
-                         "dialogues_{:03d}.json".format(i))
-            for i in self._file_ranges[dataset]
-        ]
-        dialogs = load_dialogues(dialog_paths)
-        schema_path = os.path.join(self.dstc8_data_dir, dataset, "schema.json")
-        schemas = schema.Schema(schema_path)
-
-        examples = []
-        for dialog_idx, dialog in enumerate(dialogs):
-            examples.extend(
-                self._create_examples_from_dialog(dialog, schemas, dataset))
-        return examples
-
-    def _create_examples_from_dialog(self, dialog, schemas, dataset):
-        """Create examples for every turn in the dialog."""
-        dialog_id = dialog["dialogue_id"]
-        prev_states = {}
-        examples = []
-        history = []
-        turns = dialog["turns"]
-        for turn_idx, turn in enumerate(dialog["turns"]):
-            # Generate an example for every frame in every user turn.
-            if turn["speaker"] == "USER":
-                user_utterance = turn["utterance"]
-                user_frames = {f["service"]: f for f in turn["frames"]}
-                if turn_idx > 0:
-                    system_turn = dialog["turns"][turn_idx - 1]
-                    system_utterance = system_turn["utterance"]
-                    system_frames = {f["service"]: f for f in system_turn["frames"]}
-                else:
-                    system_utterance = ""
-                    system_frames = {}
-                turn_id = "{}-{}-{:02d}".format(dataset, dialog_id, turn_idx)
-                turn_examples, prev_states, history = self._create_examples_from_turn(
-                    turns, turn_id, system_utterance, user_utterance, system_frames,
-                    user_frames, prev_states, history, schemas)
-                examples.extend(turn_examples)
-        return examples
-
-    def _get_state_update(self, current_state, prev_state):
-        """This is not nearly enough, we need to move the requested slot and
-        among other things """
-        state_update = dict(current_state)
-        for slot, values in current_state.items():
-            if slot in prev_state and prev_state[slot][0] in values:
-                # Remove the slot from state if its value didn't change.
-                state_update.pop(slot)
-        return state_update
-
-    def _create_examples_from_turn(self, turns, turn_id, system_utterance,
-                                   user_utterance, system_frames, user_frames,
-                                   prev_states, history, schemas):
-        state_update = self._get_state_update()
-        if len(user_frames) > 1:
-            print(turn_id)
-            print(user_utterance)
-            print(user_frames)
-
-        return [None], None, None
