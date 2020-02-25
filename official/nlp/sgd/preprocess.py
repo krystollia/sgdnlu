@@ -315,12 +315,16 @@ class XDstc8DataProcessor(object):
         schemas = schema.Schema(schema_path)
 
         examples = []
+        sexamples = []
+        counts = collections.defaultdict(int)
         for dialog_idx, dialog in enumerate(dialogs):
-            examples.extend(
-                self._create_examples_from_dialog(dialog, schemas, dataset))
-        return examples
+            e, s = self._create_examples_from_dialog(dialog, schemas, counts, dataset)
+            examples.extend(e)
+            sexamples.extend(s)
+        print(counts)
+        return examples, sexamples
 
-    def _create_examples_from_dialog(self, dialog, schemas, dataset):
+    def _create_examples_from_dialog(self, dialog, schemas, counts, dataset):
         """Create examples for every turn in the dialog."""
         dialog_id = dialog["dialogue_id"]
         prev_states = {}
@@ -343,7 +347,7 @@ class XDstc8DataProcessor(object):
                 turn_id = "{}-{}-{:02d}".format(dataset, dialog_id, turn_idx)
                 turn_i_examples, turn_s_examples, prev_states, history = self._create_examples_from_turn(
                     turns, turn_id, system_utterance, user_utterance, system_frames,
-                    user_frames, prev_states, history, schemas)
+                    user_frames, prev_states, history, schemas, counts)
                 iexamples.extend(turn_i_examples)
                 sexamples.extend(turn_s_examples)
         return iexamples, sexamples
@@ -367,6 +371,13 @@ class XDstc8DataProcessor(object):
                 res.append(action)
         return res
 
+    def _get_action_types(self, actions):
+        """ Return all the action types from system actions"""
+        res = set()
+        for action in actions:
+            res.add(action["act"])
+        return res
+
     def _build_negative_intent_examples(self, iexamples, list_of_intents):
         res = []
         for intent in list_of_intents:
@@ -376,7 +387,7 @@ class XDstc8DataProcessor(object):
 
     def _create_examples_from_turn(self, turns, turn_id, system_utterance,
                                    user_utterance, system_frames, user_frames,
-                                   prev_states, history, schemas):
+                                   prev_states, history, schemas, counts):
         system_tokens, system_alignments, system_inv_alignments = self._tokenize(system_utterance)
         user_tokens, user_alignments, user_inv_alignments = self._tokenize(user_utterance)
 
@@ -387,6 +398,8 @@ class XDstc8DataProcessor(object):
 
         multiframe = len(user_frames) != 1
         for service, user_frame in user_frames.items():
+            counts["total"] += 1
+
             # Create an example for this service.
             example = copy.copy(base_example)
             example.qas_id = "{}-{}".format(turn_id, service)
@@ -432,18 +445,57 @@ class XDstc8DataProcessor(object):
             more_requested = self._filter(system_actions, "REQ_MORE")
             intent_offered = self._filter(system_actions, "OFFER_INTENT")
             informed = self._filter(system_actions, "INFORM")
-            nofferred = len(offerred)
-            nrequested = len(requested)
-            nconfirmed = len(confirmed)
 
-            mixing = nofferred*nrequested + nofferred*nconfirmed + nrequested*nconfirmed
+            # The first import things is to partition the dialog space,
+            # based on state change and system actions.
+            action_types = self._get_action_types(system_actions)
+            if old_active_intent != new_active_intent:
+                counts["active_intent_change"] += 1
+                # based on the initial study, although there are four different cases
+                # here, but only three exist: and two of them are equivalent. Among them
+                # #2 is the same as #1, as if system turn has nothing to do with a service,
+                # then it is considered to be terminated, so that we need to treat the service
+                # as new mention as well.
+                #
+                # 1. len(action_types) == 0 and old_active_intent == "":
+                # 2. len(action_types) == 0 and old_active_intent != "": the same as 1.
+                # 3. len(action_types) != 0 and old_active_intent == "": does not exist
+                # 4. len(action_types) != 0 and old_active_intent != "":
+                #
 
-            if mixing != 0:
-                # Make sure that we do not get different action from system.
-                raise ValueError("this is not fun")
+                if len(action_types) == 0:
+                    if old_active_intent == "":
+                        counts["active_intent_change_00"] += 1
+                    else:
+                        counts["active_intent_change_01"] += 1
+                    # This is the always consider to be new start.
+                    
+                else:
+                    if old_active_intent == "":
+                        raise ValueError("This combination is not right.")
+                    else:
+                        counts["active_intent_change_11"] += 1
 
+                    # this is where we handle the different system action types.
+
+            else:
+                counts["active_intent_not_change"] += 1
+                # we handle different system action types here.
+
+
+
+            continue
             # to make thing easy to check, we only focus on 00014.
-            #if turn_id.find("00014") < 0: continue
+            if turn_id.find("00014") < 0: continue
+
+            # There are two major scenarios that we care about, we detected an active
+            # intent change, or we did not.
+
+            #if old_active_intent != new_active_intent:
+
+            # there are two kind of start of intents: user mention, or intent offering.
+
+
 
             # the state change is fully explained by user utterance.
             if len(offerred) == 0 and len(requested) == 0 and len(confirmed) == 0:
@@ -636,3 +688,7 @@ def _naive_tokenize(s):
     # of all the tokens in the sequence will be the original string.
     seq_tok = [tok for tok in re.split(r"([^a-zA-Z0-9])", s) if tok]
     return seq_tok
+
+
+if __name__ == "__main__":
+    _, _ = XDstc8DataProcessor("./sgddata", "dstc8_all").get_dialog_examples("train")
