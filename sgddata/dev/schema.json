@@ -87,7 +87,7 @@
         "possible_values": []
       },
       {
-        "name": "person_name",
+        "name": "System.Person",
         "description": "The name of the recipient to transfer the money to",
         "is_categorical": false,
         "possible_values": []
@@ -136,7 +136,7 @@
       },
       {
         "name": "recipient_name",
-        "type": "person_name",
+        "type": "System.Person",
         "description": "The name of the recipient to transfer the money to",
         "is_categorical": false,
         "possible_values": []
@@ -179,7 +179,7 @@
     "description": "Book bus journeys from the biggest bus network in the country",
     "entities": [
       {
-        "name": "city",
+        "name": "System.Location",
         "description": "City where bus is leaving from or going to",
         "is_categorical": false,
         "possible_values": []
@@ -233,14 +233,14 @@
     "slots": [
       {
         "name": "from_location",
-        "type": "city",
+        "type": "System.Location",
         "description": "City where bus is leaving from",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "to_location",
-        "type": "city",
+        "type": "System.Location",
         "description": "City where bus is going to",
         "is_categorical": false,
         "possible_values": []
@@ -344,7 +344,7 @@
         "possible_values": []
       },
       {
-        "name": "city",
+        "name": "System.Location",
         "description": "City where event is happening",
         "is_categorical": false,
         "possible_values": []
@@ -516,7 +516,7 @@
     "description": "Find one way and round trip flights to your favorite city",
     "entities": [
       {
-        "name": "city",
+        "name": "System.Location",
         "description": "City in which the journey originates",
         "is_categorical": false,
         "possible_values": []
@@ -638,14 +638,14 @@
       },
       {
         "name": "origin_city",
-        "type": "city",
+        "type": "System.Location",
         "description": "City in which the journey originates",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "destination_city",
-        "type": "city",
+        "type": "System.Location",
         "description": "City in which the journey ends",
         "is_categorical": false,
         "possible_values": []
@@ -802,7 +802,7 @@
     "description": "A widely used service for finding apartments and scheduling visits",
     "entities": [
       {
-        "name": "city",
+        "name": "System.Location",
         "description": "City where the apartment is located",
         "is_categorical": false,
         "possible_values": []
@@ -861,7 +861,7 @@
     "slots": [
       {
         "name": "area",
-        "type": "city",
+        "type": "System.Location",
         "description": "City where the apartment is located",
         "is_categorical": false,
         "possible_values": []
@@ -1171,7 +1171,7 @@
     "description": "Accommodation searching and booking portal",
     "entities": [
       {
-        "name": "city",
+        "name": "System.Location",
         "description": "City or town where the accommodation is located",
         "is_categorical": false,
         "possible_values": []
@@ -1247,7 +1247,7 @@
     "slots": [
       {
         "name": "location",
-        "type": "city",
+        "type": "System.Location",
         "description": "City or town where the accommodation is located",
         "is_categorical": false,
         "possible_values": []
@@ -1479,7 +1479,7 @@
     "description": "The definitive database to discover new movies to watch",
     "entities": [
       {
-        "name": "person_name",
+        "name": "System.Person",
         "description": "Name of director of the movie",
         "is_categorical": false,
         "possible_values": []
@@ -1503,7 +1503,7 @@
         "possible_values": []
       },
       {
-        "name": "person_name",
+        "name": "System.Person",
         "description": "Name of actor starring in movie",
         "is_categorical": false,
         "possible_values": []
@@ -1533,14 +1533,14 @@
       },
       {
         "name": "starring",
-        "type": "person_name",
+        "type": "System.Person",
         "description": "Name of actor starring in movie",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "director",
-        "type": "person_name",
+        "type": "System.Person",
         "description": "Name of director of the movie",
         "is_categorical": false,
         "possible_values": []
@@ -1565,7 +1565,7 @@
     "description": "A popular provider of a wide range of music content for searching and listening",
     "entities": [
       {
-        "name": "person_name",
+        "name": "System.Person",
         "description": "Artist who performed the song",
         "is_categorical": false,
         "possible_values": []
@@ -1626,7 +1626,7 @@
       },
       {
         "name": "artist",
-        "type": "person_name",
+        "type": "System.Person",
         "description": "Artist who performed the song",
         "is_categorical": false,
         "possible_values": []
@@ -1719,7 +1719,7 @@
         "possible_values": []
       },
       {
-        "name": "city",
+        "name": "System.Location",
         "description": "City where rental car will be picked up",
         "is_categorical": false,
         "possible_values": []
@@ -1795,7 +1795,7 @@
       },
       {
         "name": "pickup_city",
-        "type": "city",
+        "type": "System.Location",
         "description": "City where rental car will be picked up",
         "is_categorical": false,
         "possible_values": []
@@ -1871,7 +1871,7 @@
         "possible_values": []
       },
       {
-        "name": "city",
+        "name": "System.Location",
         "description": "City where the restaurant is located",
         "is_categorical": false,
         "possible_values": []
@@ -2022,7 +2022,7 @@
       },
       {
         "name": "location",
-        "type": "city",
+        "type": "System.Location",
         "description": "City where the restaurant is located",
         "is_categorical": false,
         "possible_values": []
@@ -2173,7 +2173,7 @@
     "description": "Discover the right therapist for you and make reservations easily",
     "entities": [
       {
-        "name": "person_name",
+        "name": "System.Person",
         "description": "Name of the therapist",
         "is_categorical": false,
         "possible_values": []
@@ -2185,7 +2185,7 @@
         "possible_values": []
       },
       {
-        "name": "city",
+        "name": "System.Location",
         "description": "Area where user wants to search for a therapist",
         "is_categorical": false,
         "possible_values": []
@@ -2222,7 +2222,7 @@
     "slots": [
       {
         "name": "therapist_name",
-        "type": "person_name",
+        "type": "System.Person",
         "description": "Name of the therapist",
         "is_categorical": false,
         "possible_values": []
@@ -2243,7 +2243,7 @@
       },
       {
         "name": "city",
-        "type": "city",
+        "type": "System.Location",
         "description": "Area where user wants to search for a therapist",
         "is_categorical": false,
         "possible_values": []
@@ -2303,7 +2303,7 @@
     "description": "The biggest database of tourist attractions and points of interest",
     "entities": [
       {
-        "name": "city",
+        "name": "System.Location",
         "description": "City or town where the attraction is located",
         "is_categorical": false,
         "possible_values": []
@@ -2350,7 +2350,7 @@
     "slots": [
       {
         "name": "location",
-        "type": "city",
+        "type": "System.Location",
         "description": "City or town where the attraction is located",
         "is_categorical": false,
         "possible_values": []
@@ -2447,7 +2447,7 @@
         "possible_values": []
       },
       {
-        "name": "city",
+        "name": "System.Location",
         "description": "Name of the city",
         "is_categorical": false,
         "possible_values": []
@@ -2484,7 +2484,7 @@
       },
       {
         "name": "city",
-        "type": "city",
+        "type": "System.Location",
         "description": "Name of the city",
         "is_categorical": false,
         "possible_values": []
