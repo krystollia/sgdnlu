@@ -1364,7 +1364,7 @@
     "description": "The widest selection and lowest prices for movie rentals",
     "entities": [
       {
-        "name": "persopn_name",
+        "name": "System.Person",
         "description": "Name of the director of the movie",
         "is_categorical": false,
         "possible_values": []
@@ -1428,14 +1428,14 @@
       },
       {
         "name": "director",
-        "type": "persopn_name",
+        "type": "System.Person",
         "description": "Name of the director of the movie",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "actors",
-        "type": "persopn_name",
+        "type": "System.Person",
         "description": "Name of an actor starring in the movie",
         "is_categorical": false,
         "possible_values": []
@@ -2173,7 +2173,7 @@
     "description": "Discover the right therapist for you and make reservations easily",
     "entities": [
       {
-        "name": "System.Person",
+        "name": "System.String",
         "description": "Name of the therapist",
         "is_categorical": false,
         "possible_values": []
@@ -2222,7 +2222,7 @@
     "slots": [
       {
         "name": "therapist_name",
-        "type": "System.Person",
+        "type": "System.String",
         "description": "Name of the therapist",
         "is_categorical": false,
         "possible_values": []
