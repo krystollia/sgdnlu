@@ -2,7 +2,7 @@
   {
     "service_name": "Banks_1",
     "description": "Manage bank accounts and transfer money",
-    "slots": [
+    "entities": [
       {
         "name": "account_type",
         "description": "The account type of the user",
@@ -13,7 +13,32 @@
         ]
       },
       {
+        "name": "System.AmountOfMoney",
+        "description": "The amount of money held in a bank account at a given time",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.Person",
+        "description": "The account name of the recipient who is to receive the transfered money",
+        "is_categorical": false,
+        "possible_values": []
+      }
+    ],
+    "slots": [
+      {
+        "name": "account_type",
+        "type": "account_type",
+        "description": "The account type of the user",
+        "is_categorical": true,
+        "possible_values": [
+          "checking",
+          "savings"
+        ]
+      },
+      {
         "name": "recipient_account_type",
+        "type": "account_type",
         "description": "The account type of the recipient whom the user is transfering money to",
         "is_categorical": true,
         "possible_values": [
@@ -23,18 +48,21 @@
       },
       {
         "name": "balance",
+        "type": "System.AmountOfMoney",
         "description": "The amount of money held in a bank account at a given time",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "amount",
+        "type": "System.AmountOfMoney",
         "description": "The amount of money to transfer",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "recipient_account_name",
+        "type": "System.Person",
         "description": "The account name of the recipient who is to receive the transfered money",
         "is_categorical": false,
         "possible_values": []
@@ -66,147 +94,48 @@
     ]
   },
   {
-    "service_name": "Buses_1",
-    "description": "Book bus journeys from the biggest bus network in the country",
-    "slots": [
-      {
-        "name": "from_location",
-        "description": "City where bus is leaving from",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "to_location",
-        "description": "City where bus is going to",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "from_station",
-        "description": "Station where bus is leaving from",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "to_station",
-        "description": "Station where bus is going to",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "leaving_date",
-        "description": "Date of bus leaving for journey",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "leaving_time",
-        "description": "Time of bus leaving for journey",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "fare",
-        "description": "Fare per ticket for journey",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "travelers",
-        "description": "Number of travelers for journey",
-        "is_categorical": true,
-        "possible_values": [
-          "1",
-          "2",
-          "3",
-          "4",
-          "5"
-        ]
-      },
-      {
-        "name": "transfers",
-        "description": "Number of transfers in journey",
-        "is_categorical": true,
-        "possible_values": [
-          "0",
-          "1"
-        ]
-      }
-    ],
-    "intents": [
-      {
-        "name": "FindBus",
-        "description": "Find a bus journey for a given pair of cities",
-        "is_transactional": false,
-        "required_slots": [
-          "from_location",
-          "to_location",
-          "leaving_date"
-        ],
-        "optional_slots": {
-          "travelers": "1"
-        }
-      },
-      {
-        "name": "BuyBusTicket",
-        "description": "Buy tickets for a bus journey",
-        "is_transactional": true,
-        "required_slots": [
-          "from_location",
-          "to_location",
-          "leaving_date",
-          "leaving_time",
-          "travelers"
-        ],
-        "optional_slots": {}
-      }
-    ]
-  },
-  {
     "service_name": "Buses_2",
     "description": "Find a bus to take you to the city you want",
-    "slots": [
+    "entities": [
       {
-        "name": "origin",
+        "name": "System.Location",
         "description": "Origin city for journey",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "destination",
-        "description": "Destination city for journey",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "origin_station_name",
+        "name": "station_name",
         "description": "Name of the bus terminus at the origin",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "destination_station_name",
-        "description": "Name of the bus terminus at the destination",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "departure_date",
+        "name": "date",
         "description": "Date of bus departure",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "price",
+        "name": "System.AmountOfMoney",
         "description": "Price per ticket of the itinerary",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "departure_time",
+        "name": "time",
         "description": "Time of bus departure",
         "is_categorical": false,
         "possible_values": []
+      },
+      {
+        "name": "fare_type",
+        "description": "Type of fare for the booking",
+        "is_categorical": true,
+        "possible_values": [
+          "Economy",
+          "Economy extra",
+          "Flexible"
+        ]
       },
       {
         "name": "group_size",
@@ -219,9 +148,74 @@
           "4",
           "5"
         ]
+      }
+    ],
+    "slots": [
+      {
+        "name": "origin",
+        "type": "System.Location",
+        "description": "Origin city for journey",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "destination",
+        "type": "System.Location",
+        "description": "Destination city for journey",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "origin_station_name",
+        "type": "station_name",
+        "description": "Name of the bus terminus at the origin",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "destination_station_name",
+        "type": "station_name",
+        "description": "Name of the bus terminus at the destination",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "departure_date",
+        "type": "date",
+        "description": "Date of bus departure",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "price",
+        "type": "System.AmountOfMoney",
+        "description": "Price per ticket of the itinerary",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "departure_time",
+        "type": "time",
+        "description": "Time of bus departure",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "group_size",
+        "type": "group_size",
+        "description": "Size of group for the booking",
+        "is_categorical": true,
+        "possible_values": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
       },
       {
         "name": "fare_type",
+        "type": "fare_type",
         "description": "Type of fare for the booking",
         "is_categorical": true,
         "possible_values": [
@@ -242,8 +236,8 @@
           "departure_date"
         ],
         "optional_slots": {
-          "group_size": "1",
-          "fare_type": "Economy"
+          "fare_type": "Economy",
+          "group_size": "1"
         }
       },
       {
@@ -266,16 +260,28 @@
   {
     "service_name": "Calendar_1",
     "description": "Calendar service to manage personal events and reservations",
-    "slots": [
+    "entities": [
       {
-        "name": "event_date",
+        "name": "date",
         "description": "Date of event or for checking availability",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "event_time",
+        "name": "time",
         "description": "Start time of event",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.String",
+        "description": "Title of event",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "time",
+        "description": "Starting time of available time slot",
         "is_categorical": false,
         "possible_values": []
       },
@@ -284,21 +290,47 @@
         "description": "Location of event",
         "is_categorical": false,
         "possible_values": []
+      }
+    ],
+    "slots": [
+      {
+        "name": "event_date",
+        "type": "event_date",
+        "description": "Date of event or for checking availability",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "event_time",
+        "type": "event_time",
+        "description": "Start time of event",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "event_location",
+        "type": "event_location",
+        "description": "Location of event",
+        "is_categorical": false,
+        "possible_values": []
       },
       {
         "name": "event_name",
+        "type": "event_name",
         "description": "Title of event",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "available_start_time",
+        "type": "available_start_time",
         "description": "Starting time of available time slot",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "available_end_time",
+        "type": "available_end_time",
         "description": "Ending time of available time slot",
         "is_categorical": false,
         "possible_values": []
@@ -338,139 +370,30 @@
     ]
   },
   {
-    "service_name": "Events_1",
-    "description": "The comprehensive portal to find and reserve seats at events near you",
-    "slots": [
-      {
-        "name": "category",
-        "description": "Type of event",
-        "is_categorical": true,
-        "possible_values": [
-          "Music",
-          "Sports"
-        ]
-      },
-      {
-        "name": "subcategory",
-        "description": "Subcategory of event, either a music genre or sport name",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "event_name",
-        "description": "Name of event",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "date",
-        "description": "Date of occurrence of event",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "time",
-        "description": "Time when the event is scheduled to start",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "number_of_seats",
-        "description": "Number of seats to find event tickets for",
-        "is_categorical": true,
-        "possible_values": [
-          "1",
-          "2",
-          "3",
-          "4",
-          "5",
-          "6",
-          "7",
-          "8",
-          "9"
-        ]
-      },
-      {
-        "name": "city_of_event",
-        "description": "City where event is happening",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "event_location",
-        "description": "Name of event location",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "address_of_location",
-        "description": "Street address of event location",
-        "is_categorical": false,
-        "possible_values": []
-      }
-    ],
-    "intents": [
-      {
-        "name": "FindEvents",
-        "description": "Find events in a given city",
-        "is_transactional": false,
-        "required_slots": [
-          "category",
-          "city_of_event"
-        ],
-        "optional_slots": {
-          "subcategory": "dontcare",
-          "date": "dontcare"
-        }
-      },
-      {
-        "name": "BuyEventTickets",
-        "description": "Buy tickets for an event",
-        "is_transactional": true,
-        "required_slots": [
-          "event_name",
-          "number_of_seats",
-          "date",
-          "city_of_event"
-        ],
-        "optional_slots": {}
-      }
-    ]
-  },
-  {
     "service_name": "Events_2",
     "description": "Get tickets for the coolest concerts and sports in your area",
-    "slots": [
+    "entities": [
       {
-        "name": "event_type",
-        "description": "Type of event",
-        "is_categorical": true,
-        "possible_values": [
-          "Music",
-          "Sports"
-        ]
-      },
-      {
-        "name": "category",
-        "description": "The sport or music subcategory",
+        "name": "System.String",
+        "description": "Name of match or artist for event",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "event_name",
-        "description": "Name of match or artist for event",
+        "name": "System.Location",
+        "description": "City where the event is taking place",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "venue_address",
+        "description": "Address of event venue",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "date",
         "description": "Date of event",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "time",
-        "description": "Starting time for event",
         "is_categorical": false,
         "possible_values": []
       },
@@ -491,19 +414,100 @@
         ]
       },
       {
+        "name": "time",
+        "description": "Starting time for event",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "event_type",
+        "description": "Type of event",
+        "is_categorical": true,
+        "possible_values": [
+          "Music",
+          "Sports"
+        ]
+      },
+      {
+        "name": "category",
+        "description": "The sport or music subcategory",
+        "is_categorical": false,
+        "possible_values": []
+      }
+    ],
+    "slots": [
+      {
+        "name": "event_type",
+        "type": "event_type",
+        "description": "Type of event",
+        "is_categorical": true,
+        "possible_values": [
+          "Music",
+          "Sports"
+        ]
+      },
+      {
+        "name": "category",
+        "type": "category",
+        "description": "The sport or music subcategory",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "event_name",
+        "type": "System.String",
+        "description": "Name of match or artist for event",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "date",
+        "type": "date",
+        "description": "Date of event",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "time",
+        "type": "time",
+        "description": "Starting time for event",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "number_of_tickets",
+        "type": "number_of_tickets",
+        "description": "Number of tickets to buy for event",
+        "is_categorical": true,
+        "possible_values": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ]
+      },
+      {
         "name": "city",
+        "type": "System.Location",
         "description": "City where the event is taking place",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "venue",
+        "type": "System.String",
         "description": "Exact venue of event",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "venue_address",
+        "type": "venue_address",
         "description": "Address of event venue",
         "is_categorical": false,
         "possible_values": []
@@ -519,8 +523,8 @@
           "city"
         ],
         "optional_slots": {
-          "date": "dontcare",
-          "category": "dontcare"
+          "category": "dontcare",
+          "date": "dontcare"
         }
       },
       {
@@ -550,16 +554,44 @@
   {
     "service_name": "Flights_1",
     "description": "Find your next flight",
-    "slots": [
+    "entities": [
       {
-        "name": "passengers",
-        "description": "Number of passengers in the booking",
+        "name": "System.Location",
+        "description": "Starting city for the trip",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "airport",
+        "description": "Airport at the starting city for the trip",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "date",
+        "description": "Start date for the trip",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "time",
+        "description": "Departure time for the outbound leg flight",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.AmountOfMoney",
+        "description": "Price of the booking per passenger",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.Boolean",
+        "description": "Whether the booking is refundable or not",
         "is_categorical": true,
         "possible_values": [
-          "1",
-          "2",
-          "3",
-          "4"
+          "True",
+          "False"
         ]
       },
       {
@@ -574,40 +606,30 @@
         ]
       },
       {
-        "name": "origin_city",
-        "description": "Starting city for the trip",
-        "is_categorical": false,
-        "possible_values": []
+        "name": "passengers",
+        "description": "Number of passengers in the booking",
+        "is_categorical": true,
+        "possible_values": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
       },
       {
-        "name": "destination_city",
-        "description": "Ending city for the trip",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "origin_airport",
-        "description": "Airport at the starting city for the trip",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "destination_airport",
-        "description": "Airport at the ending city for the trip",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "departure_date",
-        "description": "Start date for the trip",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "return_date",
-        "description": "Date of the return flight",
-        "is_categorical": false,
-        "possible_values": []
+        "name": "airlines",
+        "description": "Name of airline",
+        "is_categorical": true,
+        "possible_values": [
+          "United Airlines",
+          "American Airlines",
+          "Delta Airlines",
+          "Southwest Airlines",
+          "Alaska Airlines",
+          "British Airways",
+          "Air Canada",
+          "Air France"
+        ]
       },
       {
         "name": "number_stops",
@@ -617,39 +639,123 @@
           "0",
           "1"
         ]
+      }
+    ],
+    "slots": [
+      {
+        "name": "passengers",
+        "type": "passengers",
+        "description": "Number of passengers in the booking",
+        "is_categorical": true,
+        "possible_values": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      {
+        "name": "seating_class",
+        "type": "seating_class",
+        "description": "Seating class for the booking",
+        "is_categorical": true,
+        "possible_values": [
+          "Economy",
+          "Premium Economy",
+          "Business",
+          "First Class"
+        ]
+      },
+      {
+        "name": "origin_city",
+        "type": "System.Location",
+        "description": "Starting city for the trip",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "destination_city",
+        "type": "System.Location",
+        "description": "Ending city for the trip",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "origin_airport",
+        "type": "airport",
+        "description": "Airport at the starting city for the trip",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "destination_airport",
+        "type": "airport",
+        "description": "Airport at the ending city for the trip",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "departure_date",
+        "type": "date",
+        "description": "Start date for the trip",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "return_date",
+        "type": "date",
+        "description": "Date of the return flight",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "number_stops",
+        "type": "number_stops",
+        "description": "Number of layovers in the flight",
+        "is_categorical": true,
+        "possible_values": [
+          "0",
+          "1"
+        ]
       },
       {
         "name": "outbound_departure_time",
+        "type": "time",
         "description": "Departure time for the outbound leg flight",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "outbound_arrival_time",
+        "type": "time",
         "description": "Arrival time for the outbound leg flight",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "inbound_arrival_time",
+        "type": "time",
         "description": "Arrival time for the return leg flight",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "inbound_departure_time",
+        "type": "time",
         "description": "Departure time for the return leg flight",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "price",
+        "type": "System.AmountOfMoney",
         "description": "Price of the booking per passenger",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "refundable",
+        "type": "System.Boolean",
         "description": "Whether the booking is refundable or not",
         "is_categorical": true,
         "possible_values": [
@@ -659,6 +765,7 @@
       },
       {
         "name": "airlines",
+        "type": "airlines",
         "description": "Name of airline",
         "is_categorical": true,
         "possible_values": [
@@ -684,10 +791,10 @@
           "departure_date"
         ],
         "optional_slots": {
-          "seating_class": "Economy",
+          "airlines": "dontcare",
           "passengers": "1",
           "refundable": "dontcare",
-          "airlines": "dontcare"
+          "seating_class": "Economy"
         }
       },
       {
@@ -701,10 +808,10 @@
           "return_date"
         ],
         "optional_slots": {
-          "seating_class": "Economy",
+          "airlines": "dontcare",
           "passengers": "1",
           "refundable": "dontcare",
-          "airlines": "dontcare"
+          "seating_class": "Economy"
         }
       },
       {
@@ -718,9 +825,9 @@
           "departure_date"
         ],
         "optional_slots": {
-          "seating_class": "Economy",
           "passengers": "1",
-          "refundable": "dontcare"
+          "refundable": "dontcare",
+          "seating_class": "Economy"
         }
       },
       {
@@ -737,9 +844,9 @@
           "inbound_departure_time"
         ],
         "optional_slots": {
-          "seating_class": "Economy",
           "passengers": "1",
-          "refundable": "dontcare"
+          "refundable": "dontcare",
+          "seating_class": "Economy"
         }
       }
     ]
@@ -747,7 +854,46 @@
   {
     "service_name": "Flights_2",
     "description": "Search for cheap flights across multiple providers",
-    "slots": [
+    "entities": [
+      {
+        "name": "System.Location",
+        "description": "City of origin for the flight",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "airport",
+        "description": "Airport where the flight is departing from",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "date",
+        "description": "Date of departure flight on the ticket",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "time",
+        "description": "Departure time of the origin-destination flight",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.AmountOfMoney",
+        "description": "Ticket fare for each passenger",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.Boolean",
+        "description": "Boolean flag indicating whether the flight is a red-eye flight",
+        "is_categorical": true,
+        "possible_values": [
+          "True",
+          "False"
+        ]
+      },
       {
         "name": "passengers",
         "description": "Number of passengers to book tickets for",
@@ -760,7 +906,57 @@
         ]
       },
       {
+        "name": "number_stops",
+        "description": "Number of stopovers made by the flight",
+        "is_categorical": true,
+        "possible_values": [
+          "0",
+          "1"
+        ]
+      },
+      {
+        "name": "airlines",
+        "description": "Name of the airline to book with",
+        "is_categorical": true,
+        "possible_values": [
+          "United Airlines",
+          "American Airlines",
+          "Delta Airlines",
+          "Southwest Airlines",
+          "Alaska Airlines",
+          "British Airways",
+          "Air Canada",
+          "Air France"
+        ]
+      },
+      {
         "name": "seating_class",
+        "description": "Seating class for the flight tickets",
+        "is_categorical": true,
+        "possible_values": [
+          "Economy",
+          "Premium Economy",
+          "Business",
+          "First Class"
+        ]
+      }
+    ],
+    "slots": [
+      {
+        "name": "passengers",
+        "type": "passengers",
+        "description": "Number of passengers to book tickets for",
+        "is_categorical": true,
+        "possible_values": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      {
+        "name": "seating_class",
+        "type": "seating_class",
         "description": "Seating class for the flight tickets",
         "is_categorical": true,
         "possible_values": [
@@ -772,42 +968,49 @@
       },
       {
         "name": "origin",
+        "type": "System.Location",
         "description": "City of origin for the flight",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "destination",
+        "type": "System.Location",
         "description": "City of destination for the flight",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "origin_airport",
+        "type": "airport",
         "description": "Airport where the flight is departing from",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "destination_airport",
+        "type": "airport",
         "description": "Airport where the flight is arriving to",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "departure_date",
+        "type": "date",
         "description": "Date of departure flight on the ticket",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "return_date",
+        "type": "date",
         "description": "Date of return flight on the ticket",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "number_stops",
+        "type": "number_stops",
         "description": "Number of stopovers made by the flight",
         "is_categorical": true,
         "possible_values": [
@@ -817,36 +1020,42 @@
       },
       {
         "name": "outbound_departure_time",
+        "type": "time",
         "description": "Departure time of the origin-destination flight",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "outbound_arrival_time",
+        "type": "time",
         "description": "Arrival time of the origin-destination flight",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "inbound_arrival_time",
+        "type": "time",
         "description": "Arrival time of the destination-origin flight",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "inbound_departure_time",
+        "type": "time",
         "description": "Departure time of the destination-origin flight",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "fare",
+        "type": "System.AmountOfMoney",
         "description": "Ticket fare for each passenger",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "is_redeye",
+        "type": "System.Boolean",
         "description": "Boolean flag indicating whether the flight is a red-eye flight",
         "is_categorical": true,
         "possible_values": [
@@ -856,6 +1065,7 @@
       },
       {
         "name": "airlines",
+        "type": "airlines",
         "description": "Name of the airline to book with",
         "is_categorical": true,
         "possible_values": [
@@ -881,9 +1091,9 @@
           "departure_date"
         ],
         "optional_slots": {
-          "seating_class": "Economy",
+          "airlines": "dontcare",
           "passengers": "1",
-          "airlines": "dontcare"
+          "seating_class": "Economy"
         }
       },
       {
@@ -897,225 +1107,9 @@
           "return_date"
         ],
         "optional_slots": {
-          "seating_class": "Economy",
+          "airlines": "dontcare",
           "passengers": "1",
-          "airlines": "dontcare"
-        }
-      }
-    ]
-  },
-  {
-    "service_name": "Homes_1",
-    "description": "A widely used service for finding apartments and scheduling visits",
-    "slots": [
-      {
-        "name": "area",
-        "description": "City where the apartment is located",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "address",
-        "description": "Address of the apartment",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "property_name",
-        "description": "Name of the apartment",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "phone_number",
-        "description": "Phone number of the apartment",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "furnished",
-        "description": "Boolean flag indicating if the property is furnished",
-        "is_categorical": true,
-        "possible_values": [
-          "True",
-          "False"
-        ]
-      },
-      {
-        "name": "pets_allowed",
-        "description": "Boolean flag indicating if pets are allowed",
-        "is_categorical": true,
-        "possible_values": [
-          "True",
-          "False"
-        ]
-      },
-      {
-        "name": "rent",
-        "description": "Rent per month of the apartment",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "visit_date",
-        "description": "Date for the visit to the apartment",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "number_of_beds",
-        "description": "Number of bed rooms",
-        "is_categorical": true,
-        "possible_values": [
-          "1",
-          "2",
-          "3",
-          "4"
-        ]
-      },
-      {
-        "name": "number_of_baths",
-        "description": "Number of baths in the apartment",
-        "is_categorical": true,
-        "possible_values": [
-          "1",
-          "2",
-          "3",
-          "4"
-        ]
-      }
-    ],
-    "intents": [
-      {
-        "name": "FindApartment",
-        "description": "Find an apartment in a city for a given number of bedrooms",
-        "is_transactional": false,
-        "required_slots": [
-          "area",
-          "number_of_beds"
-        ],
-        "optional_slots": {
-          "number_of_baths": "dontcare",
-          "pets_allowed": "dontcare",
-          "furnished": "dontcare"
-        }
-      },
-      {
-        "name": "ScheduleVisit",
-        "description": "Schedule a visit for a given property on a particular date",
-        "is_transactional": true,
-        "required_slots": [
-          "property_name",
-          "visit_date"
-        ],
-        "optional_slots": {}
-      }
-    ]
-  },
-  {
-    "service_name": "Hotels_1",
-    "description": "A popular service for searching and reserving rooms in hotels",
-    "slots": [
-      {
-        "name": "destination",
-        "description": "Location of the hotel",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "number_of_rooms",
-        "description": "Number of rooms in the reservation",
-        "is_categorical": true,
-        "possible_values": [
-          "1",
-          "2",
-          "3"
-        ]
-      },
-      {
-        "name": "check_in_date",
-        "description": "Start date for the reservation",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "number_of_days",
-        "description": "Number of days in the reservation",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "star_rating",
-        "description": "Star rating of the hotel",
-        "is_categorical": true,
-        "possible_values": [
-          "1",
-          "2",
-          "3",
-          "4",
-          "5"
-        ]
-      },
-      {
-        "name": "hotel_name",
-        "description": "Name of the hotel",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "street_address",
-        "description": "Address of the hotel",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "phone_number",
-        "description": "Phone number of the hotel",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "price_per_night",
-        "description": "Price per night for the reservation",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "has_wifi",
-        "description": "Boolean flag indicating if the hotel has wifi",
-        "is_categorical": true,
-        "possible_values": [
-          "True",
-          "False"
-        ]
-      }
-    ],
-    "intents": [
-      {
-        "name": "ReserveHotel",
-        "description": "Reserve a selected hotel for given dates",
-        "is_transactional": true,
-        "required_slots": [
-          "hotel_name",
-          "check_in_date",
-          "number_of_days",
-          "destination"
-        ],
-        "optional_slots": {
-          "number_of_rooms": "1"
-        }
-      },
-      {
-        "name": "SearchHotel",
-        "description": "Find a hotel at a given location",
-        "is_transactional": false,
-        "required_slots": [
-          "destination"
-        ],
-        "optional_slots": {
-          "number_of_rooms": "dontcare",
-          "star_rating": "dontcare",
-          "has_wifi": "dontcare"
+          "seating_class": "Economy"
         }
       }
     ]
@@ -1123,36 +1117,39 @@
   {
     "service_name": "Hotels_2",
     "description": "A popular service for searching and booking houses for short term stay",
-    "slots": [
+    "entities": [
       {
-        "name": "where_to",
+        "name": "System.Location",
         "description": "Location of the house",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "number_of_adults",
-        "description": "Number of people for the reservation",
-        "is_categorical": true,
-        "possible_values": [
-          "1",
-          "2",
-          "3",
-          "4",
-          "5"
-        ]
-      },
-      {
-        "name": "check_in_date",
+        "name": "date",
         "description": "Start date for the reservation or to find the house",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "check_out_date",
-        "description": "End date for the reservation or to find the house",
+        "name": "System.PhoneNumber",
+        "description": "Phone number of the house",
         "is_categorical": false,
         "possible_values": []
+      },
+      {
+        "name": "System.AmountOfMoney",
+        "description": "Price per night of the house",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.Boolean",
+        "description": "Boolean flag indicating if the house has laundry service",
+        "is_categorical": true,
+        "possible_values": [
+          "True",
+          "False"
+        ]
       },
       {
         "name": "rating",
@@ -1167,19 +1164,84 @@
         "possible_values": []
       },
       {
+        "name": "number_of_adults",
+        "description": "Number of people for the reservation",
+        "is_categorical": true,
+        "possible_values": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      }
+    ],
+    "slots": [
+      {
+        "name": "where_to",
+        "type": "System.Location",
+        "description": "Location of the house",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "number_of_adults",
+        "type": "number_of_adults",
+        "description": "Number of people for the reservation",
+        "is_categorical": true,
+        "possible_values": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      },
+      {
+        "name": "check_in_date",
+        "type": "date",
+        "description": "Start date for the reservation or to find the house",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "check_out_date",
+        "type": "date",
+        "description": "End date for the reservation or to find the house",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "rating",
+        "type": "rating",
+        "description": "Review rating of the house",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "address",
+        "type": "address",
+        "description": "Address of the house",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
         "name": "phone_number",
+        "type": "System.PhoneNumber",
         "description": "Phone number of the house",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "total_price",
+        "type": "System.AmountOfMoney",
         "description": "Price per night of the house",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "has_laundry_service",
+        "type": "System.Boolean",
         "description": "Boolean flag indicating if the house has laundry service",
         "is_categorical": true,
         "possible_values": [
@@ -1210,8 +1272,8 @@
         ],
         "optional_slots": {
           "has_laundry_service": "dontcare",
-          "rating": "dontcare",
-          "number_of_adults": "dontcare"
+          "number_of_adults": "dontcare",
+          "rating": "dontcare"
         }
       }
     ]
@@ -1219,12 +1281,45 @@
   {
     "service_name": "Hotels_3",
     "description": "A leading provider for searching and booking hotel rooms",
-    "slots": [
+    "entities": [
       {
-        "name": "location",
+        "name": "System.Location",
         "description": "Location of the hotel",
         "is_categorical": false,
         "possible_values": []
+      },
+      {
+        "name": "date",
+        "description": "Start date for the hotel reservation",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.String",
+        "description": "Name of the hotel",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.PhoneNumber",
+        "description": "Phone number of the hotel",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.AmountOfMoney",
+        "description": "Total price for the stay",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.Boolean",
+        "description": "Boolean flag indicating if pets are allowed in the hotel",
+        "is_categorical": true,
+        "possible_values": [
+          "True",
+          "False"
+        ]
       },
       {
         "name": "number_of_rooms",
@@ -1237,26 +1332,8 @@
         ]
       },
       {
-        "name": "check_in_date",
-        "description": "Start date for the hotel reservation",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "check_out_date",
-        "description": "End date for the hotel reservation",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
         "name": "average_rating",
         "description": "Average review rating for the hotel",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "hotel_name",
-        "description": "Name of the hotel",
         "is_categorical": false,
         "possible_values": []
       },
@@ -1265,21 +1342,79 @@
         "description": "Address of the hotel",
         "is_categorical": false,
         "possible_values": []
+      }
+    ],
+    "slots": [
+      {
+        "name": "location",
+        "type": "System.Location",
+        "description": "Location of the hotel",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "number_of_rooms",
+        "type": "number_of_rooms",
+        "description": "Number of rooms to book",
+        "is_categorical": true,
+        "possible_values": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      {
+        "name": "check_in_date",
+        "type": "date",
+        "description": "Start date for the hotel reservation",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "check_out_date",
+        "type": "date",
+        "description": "End date for the hotel reservation",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "average_rating",
+        "type": "average_rating",
+        "description": "Average review rating for the hotel",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "hotel_name",
+        "type": "System.String",
+        "description": "Name of the hotel",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "street_address",
+        "type": "street_address",
+        "description": "Address of the hotel",
+        "is_categorical": false,
+        "possible_values": []
       },
       {
         "name": "phone_number",
+        "type": "System.PhoneNumber",
         "description": "Phone number of the hotel",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "price",
+        "type": "System.AmountOfMoney",
         "description": "Total price for the stay",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "pets_welcome",
+        "type": "System.Boolean",
         "description": "Boolean flag indicating if pets are allowed in the hotel",
         "is_categorical": true,
         "possible_values": [
@@ -1311,8 +1446,8 @@
           "location"
         ],
         "optional_slots": {
-          "pets_welcome": "dontcare",
-          "number_of_rooms": "dontcare"
+          "number_of_rooms": "dontcare",
+          "pets_welcome": "dontcare"
         }
       }
     ]
@@ -1320,7 +1455,13 @@
   {
     "service_name": "Media_1",
     "description": "A leading provider of movies for searching and watching on-demand",
-    "slots": [
+    "entities": [
+      {
+        "name": "System.Person",
+        "description": "Name of the director of the movie",
+        "is_categorical": false,
+        "possible_values": []
+      },
       {
         "name": "title",
         "description": "Title of the movie",
@@ -1341,9 +1482,36 @@
           "True",
           "False"
         ]
+      }
+    ],
+    "slots": [
+      {
+        "name": "title",
+        "type": "title",
+        "description": "Title of the movie",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "genre",
+        "type": "genre",
+        "description": "Genre of the movie",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "subtitles",
+        "type": "subtitles",
+        "description": "Boolean flag indicating if subtitles are desired for this movie",
+        "is_categorical": true,
+        "possible_values": [
+          "True",
+          "False"
+        ]
       },
       {
         "name": "directed_by",
+        "type": "System.Person",
         "description": "Name of the director of the movie",
         "is_categorical": false,
         "possible_values": []
@@ -1377,10 +1545,50 @@
   {
     "service_name": "Movies_1",
     "description": "A go-to provider for finding movies, searching for show times and booking tickets",
-    "slots": [
+    "entities": [
       {
-        "name": "price",
+        "name": "System.AmountOfMoney",
         "description": "Price per ticket",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.String",
+        "description": "Name of the theatre",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "time",
+        "description": "Time of the show",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "date",
+        "description": "Date of the show",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.Location",
+        "description": "City where the theatre is located",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "show_type",
+        "description": "Type of show",
+        "is_categorical": true,
+        "possible_values": [
+          "regular",
+          "3d",
+          "imax"
+        ]
+      },
+      {
+        "name": "movie_name",
+        "description": "Name of the movie",
         "is_categorical": false,
         "possible_values": []
       },
@@ -1401,34 +1609,6 @@
         ]
       },
       {
-        "name": "show_type",
-        "description": "Type of show",
-        "is_categorical": true,
-        "possible_values": [
-          "regular",
-          "3d",
-          "imax"
-        ]
-      },
-      {
-        "name": "theater_name",
-        "description": "Name of the theatre",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "show_time",
-        "description": "Time of the show",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "show_date",
-        "description": "Date of the show",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
         "name": "genre",
         "description": "Genre of the movie",
         "is_categorical": false,
@@ -1439,15 +1619,89 @@
         "description": "Address of the theatre",
         "is_categorical": false,
         "possible_values": []
+      }
+    ],
+    "slots": [
+      {
+        "name": "price",
+        "type": "System.AmountOfMoney",
+        "description": "Price per ticket",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "number_of_tickets",
+        "type": "number_of_tickets",
+        "description": "Number of the movie tickets to be purchased",
+        "is_categorical": true,
+        "possible_values": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ]
+      },
+      {
+        "name": "show_type",
+        "type": "show_type",
+        "description": "Type of show",
+        "is_categorical": true,
+        "possible_values": [
+          "regular",
+          "3d",
+          "imax"
+        ]
+      },
+      {
+        "name": "theater_name",
+        "type": "System.String",
+        "description": "Name of the theatre",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "show_time",
+        "type": "time",
+        "description": "Time of the show",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "show_date",
+        "type": "date",
+        "description": "Date of the show",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "genre",
+        "type": "genre",
+        "description": "Genre of the movie",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "street_address",
+        "type": "street_address",
+        "description": "Address of the theatre",
+        "is_categorical": false,
+        "possible_values": []
       },
       {
         "name": "location",
+        "type": "System.Location",
         "description": "City where the theatre is located",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "movie_name",
+        "type": "movie_name",
         "description": "Name of the movie",
         "is_categorical": false,
         "possible_values": []
@@ -1476,9 +1730,9 @@
           "location"
         ],
         "optional_slots": {
+          "genre": "dontcare",
           "show_type": "dontcare",
-          "theater_name": "dontcare",
-          "genre": "dontcare"
+          "theater_name": "dontcare"
         }
       },
       {
@@ -1498,100 +1752,11 @@
     ]
   },
   {
-    "service_name": "Music_1",
-    "description": "A popular provider of a wide range of music content for searching and listening",
-    "slots": [
-      {
-        "name": "song_name",
-        "description": "Name of the song",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "artist",
-        "description": "Artist who performed the song",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "album",
-        "description": "Album the song belongs to",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "genre",
-        "description": "Genre of the song",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "year",
-        "description": "Year in which the song was released",
-        "is_categorical": true,
-        "possible_values": [
-          "2010",
-          "2011",
-          "2012",
-          "2013",
-          "2014",
-          "2015",
-          "2016",
-          "2017",
-          "2018",
-          "2019"
-        ]
-      },
-      {
-        "name": "playback_device",
-        "description": "Playback device on which the song is to be played",
-        "is_categorical": true,
-        "possible_values": [
-          "TV",
-          "Kitchen speaker",
-          "Bedroom speaker"
-        ]
-      }
-    ],
-    "intents": [
-      {
-        "name": "LookupSong",
-        "description": "Search for a song",
-        "is_transactional": false,
-        "required_slots": [],
-        "optional_slots": {
-          "artist": "dontcare",
-          "album": "dontcare",
-          "year": "dontcare",
-          "genre": "dontcare"
-        }
-      },
-      {
-        "name": "PlaySong",
-        "description": "Play the selected song on the device",
-        "is_transactional": true,
-        "required_slots": [
-          "song_name"
-        ],
-        "optional_slots": {
-          "artist": "dontcare",
-          "playback_device": "TV"
-        }
-      }
-    ]
-  },
-  {
     "service_name": "Music_2",
     "description": "A widely used service for finding and playing music from a variety of genres and artists",
-    "slots": [
+    "entities": [
       {
-        "name": "song_name",
-        "description": "Name of the song",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "artist",
+        "name": "System.Person",
         "description": "Name of the artist the song is performed by",
         "is_categorical": false,
         "possible_values": []
@@ -1617,6 +1782,53 @@
           "kitchen speaker",
           "bedroom speaker"
         ]
+      },
+      {
+        "name": "song_name",
+        "description": "Name of the song",
+        "is_categorical": false,
+        "possible_values": []
+      }
+    ],
+    "slots": [
+      {
+        "name": "song_name",
+        "type": "song_name",
+        "description": "Name of the song",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "artist",
+        "type": "System.Person",
+        "description": "Name of the artist the song is performed by",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "album",
+        "type": "album",
+        "description": "Album the song belongs to",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "genre",
+        "type": "genre",
+        "description": "Genre of the song",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "playback_device",
+        "type": "playback_device",
+        "description": "Playback device on which the song is to be played",
+        "is_categorical": true,
+        "possible_values": [
+          "TV",
+          "kitchen speaker",
+          "bedroom speaker"
+        ]
       }
     ],
     "intents": [
@@ -1626,8 +1838,8 @@
         "is_transactional": false,
         "required_slots": [],
         "optional_slots": {
-          "artist": "dontcare",
           "album": "dontcare",
+          "artist": "dontcare",
           "genre": "dontcare"
         }
       },
@@ -1646,96 +1858,39 @@
     ]
   },
   {
-    "service_name": "RentalCars_1",
-    "description": "Car rental service with extensive coverage of locations and cars",
-    "slots": [
+    "service_name": "RentalCars_2",
+    "description": "Car rental service, available worldwide",
+    "entities": [
       {
-        "name": "type",
-        "description": "Category to which rental car belongs",
-        "is_categorical": true,
-        "possible_values": [
-          "Compact",
-          "Standard",
-          "Full-size"
-        ]
+        "name": "date",
+        "description": "Date of pickup for car rental",
+        "is_categorical": false,
+        "possible_values": []
       },
       {
-        "name": "car_name",
-        "description": "Model name of rental car",
+        "name": "time",
+        "description": "Time of pickup for car rental",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.Location",
+        "description": "City in which to pick up rental car",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.AmountOfMoney",
+        "description": "Total price of rental reservation",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "pickup_location",
-        "description": "Location of rental car pickup",
+        "description": "Pickup location for car rental",
         "is_categorical": false,
         "possible_values": []
       },
-      {
-        "name": "pickup_date",
-        "description": "Date of rental car pickup",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "pickup_time",
-        "description": "Time of rental car pickup",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "pickup_city",
-        "description": "City where rental car will be picked up",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "dropoff_date",
-        "description": "Date of rental car drop-off",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "total_price",
-        "description": "Total price of car rental",
-        "is_categorical": false,
-        "possible_values": []
-      }
-    ],
-    "intents": [
-      {
-        "name": "GetCarsAvailable",
-        "description": "Search for available rental cars by city and date",
-        "is_transactional": false,
-        "required_slots": [
-          "pickup_city",
-          "pickup_date",
-          "pickup_time",
-          "dropoff_date"
-        ],
-        "optional_slots": {
-          "type": "Standard"
-        }
-      },
-      {
-        "name": "ReserveCar",
-        "description": "Reserve car rental for given dates and location",
-        "is_transactional": true,
-        "required_slots": [
-          "pickup_location",
-          "pickup_date",
-          "pickup_time",
-          "dropoff_date",
-          "type"
-        ],
-        "optional_slots": {}
-      }
-    ]
-  },
-  {
-    "service_name": "RentalCars_2",
-    "description": "Car rental service, available worldwide",
-    "slots": [
       {
         "name": "car_type",
         "description": "Type of car for rental",
@@ -1751,39 +1906,65 @@
         "description": "Name of car model",
         "is_categorical": false,
         "possible_values": []
+      }
+    ],
+    "slots": [
+      {
+        "name": "car_type",
+        "type": "car_type",
+        "description": "Type of car for rental",
+        "is_categorical": true,
+        "possible_values": [
+          "Compact",
+          "Standard",
+          "Full-size"
+        ]
+      },
+      {
+        "name": "car_name",
+        "type": "car_name",
+        "description": "Name of car model",
+        "is_categorical": false,
+        "possible_values": []
       },
       {
         "name": "pickup_location",
+        "type": "pickup_location",
         "description": "Pickup location for car rental",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "pickup_date",
+        "type": "date",
         "description": "Date of pickup for car rental",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "pickup_time",
+        "type": "time",
         "description": "Time of pickup for car rental",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "pickup_city",
+        "type": "System.Location",
         "description": "City in which to pick up rental car",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "dropoff_date",
+        "type": "date",
         "description": "End date of car rental reservation",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "total_price",
+        "type": "System.AmountOfMoney",
         "description": "Total price of rental reservation",
         "is_categorical": false,
         "possible_values": []
@@ -1822,27 +2003,15 @@
   {
     "service_name": "Restaurants_1",
     "description": "A leading provider for restaurant search and reservations",
-    "slots": [
+    "entities": [
       {
-        "name": "restaurant_name",
+        "name": "System.String",
         "description": "Name of the restaurant",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "date",
-        "description": "Date for the reservation or to find availability",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "time",
-        "description": "Time for the reservation or to find availability",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "serves_alcohol",
+        "name": "System.Boolean",
         "description": "Boolean flag indicating if the restaurant serves alcohol",
         "is_categorical": true,
         "possible_values": [
@@ -1851,23 +2020,20 @@
         ]
       },
       {
-        "name": "has_live_music",
-        "description": "Boolean flag indicating if the restaurant has live music",
-        "is_categorical": true,
-        "possible_values": [
-          "True",
-          "False"
-        ]
-      },
-      {
-        "name": "phone_number",
+        "name": "System.PhoneNumber",
         "description": "Phone number of the restaurant",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "street_address",
-        "description": "Address of the restaurant",
+        "name": "System.Location",
+        "description": "City in which the restaurant is located",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "date",
+        "description": "Date for the reservation or to find availability",
         "is_categorical": false,
         "possible_values": []
       },
@@ -1896,13 +2062,122 @@
         ]
       },
       {
+        "name": "time",
+        "description": "Time for the reservation or to find availability",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "street_address",
+        "description": "Address of the restaurant",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "cuisine",
+        "description": "Cuisine of food served in the restaurant",
+        "is_categorical": false,
+        "possible_values": [
+          "Mexican",
+          "Chinese",
+          "Indian",
+          "American",
+          "Italian"
+        ]
+      }
+    ],
+    "slots": [
+      {
+        "name": "restaurant_name",
+        "type": "System.String",
+        "description": "Name of the restaurant",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "date",
+        "type": "date",
+        "description": "Date for the reservation or to find availability",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "time",
+        "type": "time",
+        "description": "Time for the reservation or to find availability",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "serves_alcohol",
+        "type": "System.Boolean",
+        "description": "Boolean flag indicating if the restaurant serves alcohol",
+        "is_categorical": true,
+        "possible_values": [
+          "True",
+          "False"
+        ]
+      },
+      {
+        "name": "has_live_music",
+        "type": "System.Boolean",
+        "description": "Boolean flag indicating if the restaurant has live music",
+        "is_categorical": true,
+        "possible_values": [
+          "True",
+          "False"
+        ]
+      },
+      {
+        "name": "phone_number",
+        "type": "System.PhoneNumber",
+        "description": "Phone number of the restaurant",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "street_address",
+        "type": "street_address",
+        "description": "Address of the restaurant",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "party_size",
+        "type": "party_size",
+        "description": "Party size for a reservation",
+        "is_categorical": true,
+        "possible_values": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      {
+        "name": "price_range",
+        "type": "price_range",
+        "description": "Price range for the restaurant",
+        "is_categorical": true,
+        "possible_values": [
+          "inexpensive",
+          "moderate",
+          "expensive",
+          "very expensive"
+        ]
+      },
+      {
         "name": "city",
+        "type": "System.Location",
         "description": "City in which the restaurant is located",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "cuisine",
+        "type": "cuisine",
         "description": "Cuisine of food served in the restaurant",
         "is_categorical": false,
         "possible_values": [
@@ -1939,46 +2214,31 @@
         ],
         "optional_slots": {
           "has_live_music": "dontcare",
-          "serves_alcohol": "dontcare",
-          "price_range": "dontcare"
+          "price_range": "dontcare",
+          "serves_alcohol": "dontcare"
         }
       }
     ]
   },
   {
-    "service_name": "RideSharing_1",
-    "description": "On-demand taxi calling service",
-    "slots": [
+    "service_name": "RideSharing_2",
+    "description": "App to book a cab to any destination",
+    "entities": [
       {
-        "name": "destination",
-        "description": "Destination for taxi ride",
+        "name": "System.AmountOfMoney",
+        "description": "Total fare for cab ride",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "shared_ride",
-        "description": "Boolean flag whether ride is shared with other passengers",
-        "is_categorical": true,
-        "possible_values": [
-          "True",
-          "False"
-        ]
-      },
-      {
-        "name": "ride_fare",
-        "description": "Total fare for taxi ride",
+        "name": "System.Duration",
+        "description": "Expected waiting time for pick-up by cab",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "approximate_ride_duration",
-        "description": "Approximate duration of ride to the destination",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "number_of_riders",
-        "description": "Number of riders to call taxi for",
+        "name": "number_of_seats",
+        "description": "Number of seats to reserve in the cab",
         "is_categorical": true,
         "possible_values": [
           "1",
@@ -1986,26 +2246,7 @@
           "3",
           "4"
         ]
-      }
-    ],
-    "intents": [
-      {
-        "name": "GetRide",
-        "description": "Call a taxi to head to a given destination",
-        "is_transactional": true,
-        "required_slots": [
-          "destination",
-          "number_of_riders",
-          "shared_ride"
-        ],
-        "optional_slots": {}
-      }
-    ]
-  },
-  {
-    "service_name": "RideSharing_2",
-    "description": "App to book a cab to any destination",
-    "slots": [
+      },
       {
         "name": "destination",
         "description": "Destination address or location for cab",
@@ -2021,21 +2262,44 @@
           "Regular",
           "Luxury"
         ]
+      }
+    ],
+    "slots": [
+      {
+        "name": "destination",
+        "type": "destination",
+        "description": "Destination address or location for cab",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "ride_type",
+        "type": "ride_type",
+        "description": "Type of cab ride",
+        "is_categorical": true,
+        "possible_values": [
+          "Pool",
+          "Regular",
+          "Luxury"
+        ]
       },
       {
         "name": "ride_fare",
+        "type": "System.AmountOfMoney",
         "description": "Total fare for cab ride",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "wait_time",
+        "type": "System.Duration",
         "description": "Expected waiting time for pick-up by cab",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "number_of_seats",
+        "type": "number_of_seats",
         "description": "Number of seats to reserve in the cab",
         "is_categorical": true,
         "possible_values": [
@@ -2063,16 +2327,49 @@
   {
     "service_name": "Services_1",
     "description": "A widely used service for finding and reserving the hair stylist of your choice",
-    "slots": [
+    "entities": [
       {
-        "name": "stylist_name",
+        "name": "System.String",
         "description": "Name of the hair stylist/salon",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "phone_number",
+        "name": "System.PhoneNumber",
         "description": "Phone number of the stylist/salon",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.Boolean",
+        "description": "Boolean flag indicating if the salon is unisex",
+        "is_categorical": true,
+        "possible_values": [
+          "True",
+          "False"
+        ]
+      },
+      {
+        "name": "System.Location",
+        "description": "City where the salon is located",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "date",
+        "description": "Date for the appointment",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "time",
+        "description": "Time of the appointment",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "street_address",
+        "description": "Address of the stylist/salon",
         "is_categorical": false,
         "possible_values": []
       },
@@ -2081,9 +2378,33 @@
         "description": "Average review rating for the stylist/salon",
         "is_categorical": false,
         "possible_values": []
+      }
+    ],
+    "slots": [
+      {
+        "name": "stylist_name",
+        "type": "System.String",
+        "description": "Name of the hair stylist/salon",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "phone_number",
+        "type": "System.PhoneNumber",
+        "description": "Phone number of the stylist/salon",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "average_rating",
+        "type": "average_rating",
+        "description": "Average review rating for the stylist/salon",
+        "is_categorical": false,
+        "possible_values": []
       },
       {
         "name": "is_unisex",
+        "type": "System.Boolean",
         "description": "Boolean flag indicating if the salon is unisex",
         "is_categorical": true,
         "possible_values": [
@@ -2093,24 +2414,28 @@
       },
       {
         "name": "street_address",
+        "type": "street_address",
         "description": "Address of the stylist/salon",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "city",
+        "type": "System.Location",
         "description": "City where the salon is located",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "appointment_date",
+        "type": "date",
         "description": "Date for the appointment",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "appointment_time",
+        "type": "time",
         "description": "Time of the appointment",
         "is_categorical": false,
         "possible_values": []
@@ -2144,45 +2469,99 @@
   {
     "service_name": "Services_2",
     "description": "The go-to service for finding and booking appointments with top rated dentists",
-    "slots": [
+    "entities": [
       {
-        "name": "dentist_name",
+        "name": "System.String",
         "description": "Name of the dentist",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "phone_number",
+        "name": "System.PhoneNumber",
         "description": "Phone number of the dentist",
         "is_categorical": false,
         "possible_values": []
+      },
+      {
+        "name": "System.Location",
+        "description": "City where the dentist is located",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "date",
+        "description": "Date for the appointment",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "time",
+        "description": "Time for the appointment",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.Boolean",
+        "description": "Boolean flag indicating if the dentist offers cosmetic services",
+        "is_categorical": true,
+        "possible_values": [
+          "True",
+          "False"
+        ]
       },
       {
         "name": "address",
         "description": "Address of the dentist",
         "is_categorical": false,
         "possible_values": []
+      }
+    ],
+    "slots": [
+      {
+        "name": "dentist_name",
+        "type": "System.String",
+        "description": "Name of the dentist",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "phone_number",
+        "type": "System.PhoneNumber",
+        "description": "Phone number of the dentist",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "address",
+        "type": "address",
+        "description": "Address of the dentist",
+        "is_categorical": false,
+        "possible_values": []
       },
       {
         "name": "city",
+        "type": "System.Location",
         "description": "City where the dentist is located",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "appointment_date",
+        "type": "date",
         "description": "Date for the appointment",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "appointment_time",
+        "type": "time",
         "description": "Time for the appointment",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "offers_cosmetic_services",
+        "type": "System.Boolean",
         "description": "Boolean flag indicating if the dentist offers cosmetic services",
         "is_categorical": true,
         "possible_values": [
@@ -2219,16 +2598,34 @@
   {
     "service_name": "Services_3",
     "description": "A popular provider for finding the right doctor for your needs. Also allows you to schedule your visit to the doctor",
-    "slots": [
+    "entities": [
       {
-        "name": "doctor_name",
+        "name": "System.Person",
         "description": "Name of the doctor or the medical practice",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "phone_number",
+        "name": "System.PhoneNumber",
         "description": "Contact number for the doctor or the medical practice",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.Location",
+        "description": "City where the doctor is located",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "date",
+        "description": "Date for scheduling the appointment with the doctor",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "time",
+        "description": "Time for the appointment with the doctor",
         "is_categorical": false,
         "possible_values": []
       },
@@ -2245,25 +2642,71 @@
         "possible_values": []
       },
       {
+        "name": "type",
+        "description": "Speciality of the doctor",
+        "is_categorical": true,
+        "possible_values": [
+          "Gynecologist",
+          "ENT Specialist",
+          "Ophthalmologist",
+          "General Practitioner",
+          "Dermatologist"
+        ]
+      }
+    ],
+    "slots": [
+      {
+        "name": "doctor_name",
+        "type": "System.Person",
+        "description": "Name of the doctor or the medical practice",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "phone_number",
+        "type": "System.PhoneNumber",
+        "description": "Contact number for the doctor or the medical practice",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "average_rating",
+        "type": "average_rating",
+        "description": "Average review rating of the doctor",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "street_address",
+        "type": "street_address",
+        "description": "Address of the doctor",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
         "name": "city",
+        "type": "System.Location",
         "description": "City where the doctor is located",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "appointment_date",
+        "type": "date",
         "description": "Date for scheduling the appointment with the doctor",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "appointment_time",
+        "type": "time",
         "description": "Time for the appointment with the doctor",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "type",
+        "type": "type",
         "description": "Speciality of the doctor",
         "is_categorical": true,
         "possible_values": [
@@ -2296,135 +2739,6 @@
           "type"
         ],
         "optional_slots": {}
-      }
-    ]
-  },
-  {
-    "service_name": "Travel_1",
-    "description": "The biggest database of tourist attractions and points of interest",
-    "slots": [
-      {
-        "name": "location",
-        "description": "City or town where the attraction is located",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "attraction_name",
-        "description": "Common name of the attraction",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "category",
-        "description": "Category to which the attraction belongs",
-        "is_categorical": true,
-        "possible_values": [
-          "Place of Worship",
-          "Theme Park",
-          "Museum",
-          "Historical Landmark",
-          "Park",
-          "Tourist Attraction",
-          "Sports Venue",
-          "Shopping Area",
-          "Performing Arts Venue",
-          "Nature Preserve"
-        ]
-      },
-      {
-        "name": "phone_number",
-        "description": "Phone number to contact the attraction",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "free_entry",
-        "description": "Boolean flag indicating whether entrance to attraction is free",
-        "is_categorical": true,
-        "possible_values": [
-          "True",
-          "False"
-        ]
-      },
-      {
-        "name": "good_for_kids",
-        "description": "Boolean flag indicating whether attraction is good for to take kids to",
-        "is_categorical": true,
-        "possible_values": [
-          "True",
-          "False"
-        ]
-      }
-    ],
-    "intents": [
-      {
-        "name": "FindAttractions",
-        "description": "Browse attractions in a given city",
-        "is_transactional": false,
-        "required_slots": [
-          "location"
-        ],
-        "optional_slots": {
-          "category": "dontcare",
-          "free_entry": "dontcare",
-          "good_for_kids": "dontcare"
-        }
-      }
-    ]
-  },
-  {
-    "service_name": "Weather_1",
-    "description": "Check the weather for any place and any date",
-    "slots": [
-      {
-        "name": "precipitation",
-        "description": "The possibility of rain or snow in percentage",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "humidity",
-        "description": "Percentage humidity",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "wind",
-        "description": "Wind speed in miles per hour",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "temperature",
-        "description": "Temperature in Fahrenheit",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "city",
-        "description": "Name of the city",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "date",
-        "description": "Date for the weather",
-        "is_categorical": false,
-        "possible_values": []
-      }
-    ],
-    "intents": [
-      {
-        "name": "GetWeather",
-        "description": "Get the weather of a certain location on a date",
-        "is_transactional": false,
-        "required_slots": [
-          "city"
-        ],
-        "optional_slots": {
-          "date": "2019-03-01"
-        }
       }
     ]
   }
