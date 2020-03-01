@@ -131,19 +131,69 @@ FILE_RANGES = {
 PER_FRAME_OUTPUT_FILENAME = "dialogues_and_metrics.json"
 
 
-class UnifiedExample(object):
-    """A single training/test example for unified sequence classification.
-     Includes both span labeler and classifier on the [CLS]
-     For examples without an answer, the start and end position are -1.
 
-     It will be used for both intent finding, and slot filling, so that
-     we can treat them uniformly.
-     when start_position and end position is None, the data is prepared for classifier only.
-  """
+class PairExample(object):
+    """
+    A single training/test example for unified sequence classification.
+    Includes both span labeler and classifier on the [CLS]
+    For examples without an answer, the start and end position are -1.
+
+    It will be used for both intent finding, and slot filling, so that
+    we can treat them uniformly.
+    when start_position and end position is None, the data is prepared for classifier only.
+
+    context: understand what condition this mapping works.
+    payload: yes or no or other inferred values that we care about: if context is not empty.
+    label: means paylaod?
+    """
 
     def __init__(self, qas_id, doc_tokens):
-        self.is_intent = True
-        self.service = None
+        self.context = None
+        self.target = None
+        self.qas_id = qas_id
+        self.question_text = None
+        self.doc_tokens = doc_tokens
+        self.label = None
+        self.weight = 1.0
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        s = ""
+        s += "qas_id: %s" % (tokenization.printable_text(self.qas_id))
+        s += ", question_text: %s" % (
+            tokenization.printable_text(self.question_text))
+        s += ", doc_tokens: [%s]" % (" ".join(self.doc_tokens))
+        if self.start_position:
+            s += ", start_position: %d" % self.start_position
+        if self.start_position:
+            s += ", end_position: %d" % self.end_position
+        if self.label:
+            s += ", label: %s" % self.label
+        if self.service:
+            s += ", service: %s" % self.service
+        if self.slot:
+            s += ", slot: %s" % self.slot
+        return s
+
+
+
+class UnifiedExample(object):
+    """
+    A single training/test example for unified sequence classification.
+    Includes both span labeler and classifier on the [CLS]
+    For examples without an answer, the start and end position are -1.
+
+    It will be used for both intent finding, and slot filling, so that
+    we can treat them uniformly.
+    when start_position and end position is None, the data is prepared for classifier only.
+
+    context: understand what condition this mapping works.
+    label: four possibilities: no, yes, don't care, find in context
+    """
+
+    def __init__(self, qas_id, doc_tokens):
         self.slot = None
         self.context = None
         self.qas_id = qas_id
@@ -152,7 +202,8 @@ class UnifiedExample(object):
         self.start_position = None
         self.end_position = None
         self.label = None
-        self.weight = 1.0
+        self.label_weight = 1.0
+        self.span_weight = 1.0
 
     def __str__(self):
         return self.__repr__()
@@ -288,7 +339,7 @@ class XDstc8DataProcessor(object):
                  collection,
                  vocab_file="./models/uncased_L-12_H-768_A-12/vocab.txt",
                  do_lower_case=True,
-                 max_seq_length=DEFAULT_MAX_SEQ_LENGTH, ):
+                 max_seq_length=DEFAULT_MAX_SEQ_LENGTH):
         self.dstc8_data_dir = dstc8_data_dir
         self._file_ranges = FILE_RANGES[collection]
         # BERT tokenizer
@@ -316,12 +367,15 @@ class XDstc8DataProcessor(object):
 
         examples = []
         sexamples = []
-        counts = collections.defaultdict(int)
+        mydict = collections.defaultdict(int)
+
         for dialog_idx, dialog in enumerate(dialogs):
-            e, s = self._create_examples_from_dialog(dialog, schemas, counts, dataset)
+            e, s = self._create_examples_from_dialog(dialog, schemas, mydict, dataset)
             examples.extend(e)
             sexamples.extend(s)
-        print(counts)
+
+        for k, v in sorted(mydict.items(), key=lambda item: (item[0], item[1])):
+            print("%s: %s" % (k, v))
         return examples, sexamples
 
     def _create_examples_from_dialog(self, dialog, schemas, counts, dataset):
@@ -375,14 +429,28 @@ class XDstc8DataProcessor(object):
         """ Return all the action types from system actions"""
         res = set()
         for action in actions:
+            #if not action["act"].startswith("NOTIFY"):
             res.add(action["act"])
+        lst = list(res)
+        lst.sort()
+        return lst
+
+    def _get_slot_names(selfs, slots):
+        res = set()
+        for slot in slots:
+            res.add(slot["slot"])
         return res
 
-    def _build_negative_intent_examples(self, iexamples, list_of_intents):
-        res = []
-        for intent in list_of_intents:
-            res.add()
-        iexamples.extend([])
+    def _is_update_from_offer(self, updates, actions):
+        offers = {}
+        for action in actions:
+            if action['act'] == 'OFFER':
+                offers[action['slot']] = action['value']
+
+        for slot_name in updates:
+            if slot_name not in offers or updates[slot_name] != offers[slot_name]:
+                return False
+        return True
 
 
     def _create_examples_from_turn(self, turns, turn_id, system_utterance,
@@ -392,7 +460,7 @@ class XDstc8DataProcessor(object):
         user_tokens, user_alignments, user_inv_alignments = self._tokenize(user_utterance)
 
         states = {}
-        base_example = UnifiedExample(turn_id, user_tokens)
+
         iexamples = []
         sexamples = []
 
@@ -401,8 +469,7 @@ class XDstc8DataProcessor(object):
             counts["total"] += 1
 
             # Create an example for this service.
-            example = copy.copy(base_example)
-            example.qas_id = "{}-{}".format(turn_id, service)
+            frame_turn_id = "{}-{}".format(turn_id, service)
 
             service_schema = schemas.get_service_schema(service)
 
@@ -414,43 +481,47 @@ class XDstc8DataProcessor(object):
 
             # if the state update in the slots, we have training example for this intent
             user_slots = [] if "slots" not in user_frame.keys() else user_frame["slots"]
+            user_slots_set = self._get_slot_names(user_slots)
 
+            # no bias from system tokens yet, need to add back later.
             user_span_boundaries = self._find_subword_indices(
                 state_update, user_utterance, user_frame["slots"], user_alignments,
-                user_tokens, 2 + len(system_tokens))
+                user_tokens, 0)
 
-            if system_frame is not None:
-                system_span_boundaries = self._find_subword_indices(
-                    state_update, system_utterance, system_frame["slots"],
-                    system_alignments, system_tokens, 1)
-            else:
-                system_span_boundaries = {}
 
             # we need to first figure out when is the uptick of the intent.
             old_active_intent = "" if len(prev_state) == 0 else prev_state["active_intent"]
             new_active_intent = curr_state["active_intent"]
-
-
-            # for intent, we check couple things:
-            # 1. if there is the no active state for this service last user turn. And we saw all
-            #    all the slots are mentioned here, it is an direct hit, we should create the
-            #    training example as is.
-            # whether there is offer: offer has an yes or no expectation.
-            mentioned_count = self._count_contained(state_update.keys(), user_slots)
+            intent_desc = "" if new_active_intent == "NONE" else service_schema.get_intent_description(new_active_intent)
             system_actions = [] if system_frame is None or "actions" not in system_frame.keys() else system_frame["actions"]
-            offerred = self._filter(system_actions, "OFFER")
-            requested = self._filter(system_actions, "REQUEST")
-            confirmed = self._filter(system_actions, "CONFIRM")
-            success_notified = self._filter(system_actions, "NOTIFY_SUCCESS")
-            more_requested = self._filter(system_actions, "REQ_MORE")
-            intent_offered = self._filter(system_actions, "OFFER_INTENT")
-            informed = self._filter(system_actions, "INFORM")
+
+            all_slots = service_schema.slots
+            requested_slots = [] if "requested_slots" not in curr_state else curr_state["requested_slots"]
 
             # The first import things is to partition the dialog space,
             # based on state change and system actions.
             action_types = self._get_action_types(system_actions)
+
+            # to make thing easy to check, we only focus on 00014.
+            # if turn_id.find("00014") < 0: continue
+            def p():
+                print(system_actions)
+                print(turn_id)
+                print(service)
+                print(len(user_frames))
+                print(prev_state)
+                print(curr_state)
+                print(state_update)
+                print(user_utterance)
+                print("\n")
+
             if old_active_intent != new_active_intent:
                 counts["active_intent_change"] += 1
+                if len(requested_slots) == 0:
+                    counts["active_intent_change+no_requested"] += 1
+                else:
+                    counts["active_intent_change+with_requested"] += 1
+
                 # based on the initial study, although there are four different cases
                 # here, but only three exist: and two of them are equivalent. Among them
                 # #2 is the same as #1, as if system turn has nothing to do with a service,
@@ -463,140 +534,204 @@ class XDstc8DataProcessor(object):
                 # 4. len(action_types) != 0 and old_active_intent != "":
                 #
 
+                # It is at least logical to treat inform/notify as the same group, with inform
+                # offer the no binary information, and notify offer binary status of service.
+
+
                 if len(action_types) == 0:
                     if old_active_intent == "":
                         counts["active_intent_change_00"] += 1
                     else:
                         counts["active_intent_change_01"] += 1
+
                     # This is the always consider to be new start.
-                    
+                    # context should be empty.
+                    # payload should be intent_name (frame).
+                    # For each related intent, we create an example with one yes and many nos.
+
+                    # for each related slot, we created an example, with label and span.
+                    if new_active_intent == "NONE":
+                        raise ValueError("something is wrong")
+
+                    pair_example = PairExample(frame_turn_id, user_tokens)
+                    pair_example.target = new_active_intent
+                    pair_example.question_text = self._tokenize(intent_desc)[0]
+                    pair_example.label = 1.0
+                    iexamples.append(copy.copy(pair_example))
+
+                    # for negatives, maybe this is enough?
+                    for other_intent in service_schema.intents:
+                        if other_intent != new_active_intent:
+                            other_intent_desc = service_schema.get_intent_description(other_intent)
+                            pair_example.target = other_intent
+                            pair_example.question_text = self._tokenize(other_intent_desc)[0]
+                            pair_example.label = 1.0
+                            iexamples.append(copy.copy(pair_example))
+
+                    # maybe we can add more negative example
+                    # now span we will have four
+                    for slot_name in service_schema.slots:
+                        slot_desc = service_schema.get_slot_description(slot_name)
+                        span_example = UnifiedExample(turn_id, user_tokens)
+                        span_example.question_text = self._tokenize(slot_desc)
+                        offset = len(span_example.question_text) + 2
+                        # we assume all slots is mentioned here as it is a fresh start.
+                        # 0, yes, 1, no, 2 dono't care, 3, from context.
+                        if slot_name in user_slots_set:
+                            span_example.start_position = user_span_boundaries[slot_name][0] + offset
+                            span_example.end_position = user_span_boundaries[slot_name][1] + offset
+                            span_example.label = 0
+                            sexamples.append(copy.copy(span_example))
+                        else:
+                            span_example.start_position = 0
+                            span_example.end_position = 0
+                            span_example.span_weight = 0.0
+                            span_example.label_weight = 1.0
+                            sexamples.append(copy.copy(span_example))
+
                 else:
                     if old_active_intent == "":
                         raise ValueError("This combination is not right.")
-                    else:
-                        counts["active_intent_change_11"] += 1
 
+                    counts["active_intent_change_11"] += 1
                     # this is where we handle the different system action types.
+                    counts["active_intent_change_11" + str(action_types)] += 1
 
+                    if 'REQ_MORE' in action_types:
+                        pair_example = PairExample(frame_turn_id, user_tokens)
+                        pair_example.context = "REQ_MORE"
+                        pair_example.target = "NONE"
+                        pair_example.question_text = self._tokenize("no, thanks.")[0]
+                        pair_example.label = 1 if new_active_intent == "NONE" else 0
+                        iexamples.append(copy.copy(pair_example))
+
+                        # There only two different case for yes with slot, skip it for now.
+
+                    elif str(action_types) == "['OFFER_INTENT']":
+                        pair_example = PairExample(frame_turn_id, user_tokens)
+                        pair_example.context = "OFFER"
+                        pair_example.target = "NONE"
+                        pair_example.question_text = self._tokenize("no, thanks.")[0]
+                        pair_example.label = 1 if new_active_intent == "NONE" else 0
+                        iexamples.append(copy.copy(pair_example))
+
+                    else:
+                        # all these case here is just retriggering the old intent.
+                        pair_example = PairExample(frame_turn_id, user_tokens)
+                        pair_example.context = None
+                        pair_example.target = new_active_intent
+                        pair_example.question_text = self._tokenize("no, thanks.")[0]
+                        pair_example.label = 1
+                        iexamples.append(copy.copy(pair_example))
             else:
                 counts["active_intent_not_change"] += 1
-                # we handle different system action types here.
-
-
-
-            continue
-            # to make thing easy to check, we only focus on 00014.
-            if turn_id.find("00014") < 0: continue
-
-            # There are two major scenarios that we care about, we detected an active
-            # intent change, or we did not.
-
-            #if old_active_intent != new_active_intent:
-
-            # there are two kind of start of intents: user mention, or intent offering.
-
-
-
-            # the state change is fully explained by user utterance.
-            if len(offerred) == 0 and len(requested) == 0 and len(confirmed) == 0:
-                if mentioned_count > 0 and len(state_update) != 0:
-                    example.question_text = service_schema.description
-                    example.label = 1
-                    # We use weight to nudge the decision a bit as we do not
-                    # have ground truth one way or another.
-                    if old_active_intent != new_active_intent:
-                        example.weight = 1.0
-                    else:
-                        example.weight = 0.5
-                    continue
-                elif len(success_notified) != 0:
-                    # we do not need to do much? or we check the ack as well.
-                    example.question_text = "acknowledge"
-                    example.context = "Notified success"
-                    example.label = 1
-                    continue
-                elif len(more_requested) != 0:
-                    example.question_text = "no"
-                    example.context = "request more"
-                    example.label = 1
-                    continue
-                elif len(intent_offered) != 0:
-                    intent = intent_offered[0]["values"]
-                    example.context = "binary offer"
-                    example.label = 1
-                    if intent == new_active_intent:
-                        example.question_text = "yes"
-                    else:
-                        example.question_text = "no"
-                    continue
-                elif len(informed) != 0:
-                    example.question_text = "acknowledge"
-                    example.context = "Notified success"
-                    example.label = 1
-                    continue
+                counts["active_intent_not_change" + str(action_types)] += 1
+                if len(requested_slots) == 0:
+                    counts["active_intent_not_change+no_requested"] += 1
                 else:
-                    print(system_actions)
-                    print(mentioned_count)
-                    print(turn_id)
-                    print(service)
-                    print(len(user_frames))
-                    print(prev_state)
-                    print(curr_state)
-                    print(state_update)
-                    print(user_utterance)
-                    print("\n")
-                    raise ValueError("something is wrong here?")
+                    counts["active_intent_not_change+with_requested"] += 1
 
-            # Now deal with offer, if the system have offered, and user accepted or not.
-            if len(offerred) != 0 and len(requested) == 0 and len(confirmed) == 0:
-                accepted_offer_count = self._count_contained(state_update, system_actions)
-                example.context = "listed offers"
-                example.question_text = "take the offer"
-                # Now use accepted some offer, so it is a yes.
-                if accepted_offer_count != 0:
-                    example.label = 1
-                    continue
-                else:
-                    example.label = 0
+                # Now we first handle the small intent or requested slots.
+                # and we can add more negative example
+                requested_slots_set = set(requested_slots)
+                for slot_name in service_schema.slots:
+                    slot_desc = "request " + service_schema.get_slot_description(slot_name)
+                    pair_example = PairExample(turn_id, user_tokens)
+                    pair_example.target = "REQUEST"
+                    pair_example.question_text = self._tokenize(slot_desc)
+                    if slot_name in requested_slots_set:
+                        pair_example.label = 1
+                        iexamples.append(copy.copy(pair_example))
+                    else:
+                        pair_example.label = 0
+                        iexamples.append(copy.copy(pair_example))
+
+                # Now we need to handle remaining things.
+                if len(requested_slots) != 0:
                     continue
 
-            if len(offerred) == 0 and len(requested) != 0 and len(confirmed) == 0:
-                example.context = requested
-                continue
+                # So we deal with four main categories on the system side:
+                # 1. INFORM/NOTIFY_*
+                # 2. REQUEST
+                # 3. OFFER
+                # 4. CONFIRM
 
-            if len(offerred) == 0 and len(requested) == 0 and len(confirmed) != 0:
-                example.context = requested
-                continue
-            else:
-                print(confirmed)
-                print(mentioned_count)
-                print(len(state_update))
-                print(turn_id)
-                print(service)
-                print(len(user_frames))
-                print(state_update)
-                print(user_utterance)
-                print("\n")
-                print("\n")
-                print("\n")
-                raise ValueError("something is wrong here?")
+                counts["active_intent_not_change_wo_request" + str(action_types)] += 1
+                if 'REQUEST' in action_types:
+                    # We only handle the requested slot for weak inference.
+                    for slot_name in requested_slots_set:
+                        slot_desc = "request " + service_schema.get_slot_description(slot_name)
+                        span_example = UnifiedExample(turn_id, user_tokens)
+                        span_example.question_text = self._tokenize(slot_desc)
+                        offset = len(span_example.question_text) + 2
+                        # we assume all slots is mentioned here as it is a fresh start.
+                        # 0, yes, 1, no, 2 dono't care, 3, from context.
+                        if slot_name in user_span_boundaries:
+                            span_example.start_position = user_span_boundaries[slot_name][0] + offset
+                            span_example.end_position = user_span_boundaries[slot_name][1] + offset
+                            span_example.label = 0
+                            sexamples.append(copy.copy(span_example))
+                        else:
+                            span_example.start_position = 0
+                            span_example.end_position = 0
+                            span_example.span_weight = 0.0
+                            span_example.label_weight = 1.0
+                            sexamples.append(copy.copy(span_example))
 
+                elif 'CONFIRM' in action_types:
+                    # confirm is a bit like request when no so need to produce span example, plus yes or no.
+                    # first get pair_example there: if the state_update is empty, it is yes,
+                    pair_example = PairExample(frame_turn_id, user_tokens)
+                    pair_example.context = None
+                    pair_example.target = "Yes"
+                    pair_example.question_text = self._tokenize("confirm, yes")[0]
+                    pair_example.label = 1 if len(state_update) == 0 else 0
+                    iexamples.append(copy.copy(pair_example))
 
+                    # only work on confirmed slots.
+                    for action in system_actions:
+                        slot_name = action['slot']
+                        slot_desc = "confirm " + service_schema.get_slot_description(slot_name)
+                        span_example = UnifiedExample(turn_id, user_tokens)
+                        span_example.question_text = self._tokenize(slot_desc)
+                        offset = len(span_example.question_text) + 2
+                        # we assume all slots is mentioned here as it is a fresh start.
+                        # 0, yes, 1, no, 2 dono't care, 3, from context.
+                        if slot_name in user_slots_set:
+                            span_example.start_position = user_span_boundaries[slot_name][0] + offset
+                            span_example.end_position = user_span_boundaries[slot_name][1] + offset
+                            span_example.label = 0
+                            sexamples.append(copy.copy(span_example))
+                        else:
+                            span_example.start_position = 0
+                            span_example.end_position = 0
+                            span_example.span_weight = 0.0
+                            span_example.label_weight = 1.0
+                            sexamples.append(copy.copy(span_example))
 
+                elif 'INFORM' in action_types:
+                    # We expect ack here. No need for a model, at least the sgd data does not help.
+                    # just let new request take care.
+                    # but we might need to ack some how.
+                    continue
 
+                elif 'NOTIFY_SUCCESS' in action_types:
+                    # so we need an yes or no.
+                    # response to inform is: acknowledge with new request or no (along with need next one).
+                    continue
 
-            print(mentioned_count)
-            print(len(state_update))
-            print(turn_id)
-            print(service)
-            print(len(user_frames))
-            print(state_update)
-            print(user_utterance)
-            print("\n")
-            print("\n")
-            print("\n")
+                elif "OFFER" in action_types:
+                    # We mainly worry whether the offer is accepted or not.
+                    # Since there is not direct indication, we use the following heuristics:
+                    # If the system update are from the user sentence, it is not.
+                    # if the system update are from offer, it is yes.
+                    pair_example = PairExample(frame_turn_id, user_tokens)
+                    pair_example.context = None
+                    pair_example.target = "Accept"
+                    pair_example.question_text = self._tokenize("offer : I like it.")[0]
+                    pair_example.label = 1 if len(state_update) == 0 else 0
+                    iexamples.append(copy.copy(pair_example))
 
-            iexamples.append(example)
         return iexamples, sexamples, states, history
 
     def _get_state_update(self, current_state, prev_state):
@@ -652,7 +787,7 @@ class XDstc8DataProcessor(object):
             during inference to map word-piece indices to spans in the original
             utterance.
         """
-        utterance = tokenization.convert_to_unicode(utterance)
+        #utterance = tokenization.convert_to_unicode(utterance)
         # After _naive_tokenize, spaces and punctuation marks are all retained, i.e.
         # direct concatenation of all the tokens in the sequence will be the
         # original string.
@@ -691,4 +826,4 @@ def _naive_tokenize(s):
 
 
 if __name__ == "__main__":
-    _, _ = XDstc8DataProcessor("./sgddata", "dstc8_all").get_dialog_examples("train")
+    _, _ = XDstc8DataProcessor("./sgddata", "dstc8_tiny").get_dialog_examples("train")

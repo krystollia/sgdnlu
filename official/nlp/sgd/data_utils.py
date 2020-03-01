@@ -89,7 +89,7 @@ def load_dialogues(dialog_json_filepaths):
 
 
 class Dstc8DataProcessor(object):
-  """Data generator for dstc8 dialogues."""
+  """Data generator for dstc8 dialogues, we only works on the original char space."""
 
   def __init__(self,
                dstc8_data_dir,
