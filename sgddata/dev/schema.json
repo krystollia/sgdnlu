@@ -463,7 +463,7 @@
       },
       {
         "name": "city_of_event",
-        "type": "city_of_event",
+        "type": "System.Location",
         "description": "City where event is happening",
         "is_categorical": false,
         "possible_values": []
