@@ -463,7 +463,7 @@
       },
       {
         "name": "city_of_event",
-        "type": "city_of_event",
+        "type": "System.Location",
         "description": "City where event is happening",
         "is_categorical": false,
         "possible_values": []
@@ -2786,20 +2786,14 @@
         "possible_values": []
       },
       {
-        "name": "System.String",
-        "description": "Title of event",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "time",
-        "description": "Starting time of available time slot",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
         "name": "event_location",
         "description": "Location of event",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "System.String",
+        "description": "Title of event",
         "is_categorical": false,
         "possible_values": []
       }
@@ -2807,14 +2801,14 @@
     "slots": [
       {
         "name": "event_date",
-        "type": "event_date",
+        "type": "date",
         "description": "Date of event or for checking availability",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "event_time",
-        "type": "event_time",
+        "type": "time",
         "description": "Start time of event",
         "is_categorical": false,
         "possible_values": []
@@ -2828,21 +2822,21 @@
       },
       {
         "name": "event_name",
-        "type": "event_name",
+        "type": "System.String",
         "description": "Title of event",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "available_start_time",
-        "type": "available_start_time",
+        "type": "time",
         "description": "Starting time of available time slot",
         "is_categorical": false,
         "possible_values": []
       },
       {
         "name": "available_end_time",
-        "type": "available_end_time",
+        "type": "time",
         "description": "Ending time of available time slot",
         "is_categorical": false,
         "possible_values": []
@@ -2898,8 +2892,29 @@
         "possible_values": []
       },
       {
-        "name": "venue_address",
-        "description": "Address of event venue",
+        "name": "venue",
+        "description": "Exact venue of event",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "event_type",
+        "description": "Type of event",
+        "is_categorical": true,
+        "possible_values": [
+          "Music",
+          "Sports"
+        ]
+      },
+      {
+        "name": "category",
+        "description": "The sport or music subcategory",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "time",
+        "description": "Starting time for event",
         "is_categorical": false,
         "possible_values": []
       },
@@ -2926,23 +2941,8 @@
         ]
       },
       {
-        "name": "time",
-        "description": "Starting time for event",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "event_type",
-        "description": "Type of event",
-        "is_categorical": true,
-        "possible_values": [
-          "Music",
-          "Sports"
-        ]
-      },
-      {
-        "name": "category",
-        "description": "The sport or music subcategory",
+        "name": "venue_address",
+        "description": "Address of event venue",
         "is_categorical": false,
         "possible_values": []
       }
@@ -3012,7 +3012,7 @@
       },
       {
         "name": "venue",
-        "type": "System.String",
+        "type": "venue",
         "description": "Exact venue of event",
         "is_categorical": false,
         "possible_values": []
@@ -3107,17 +3107,6 @@
         ]
       },
       {
-        "name": "seating_class",
-        "description": "Seating class for the booking",
-        "is_categorical": true,
-        "possible_values": [
-          "Economy",
-          "Premium Economy",
-          "Business",
-          "First Class"
-        ]
-      },
-      {
         "name": "passengers",
         "description": "Number of passengers in the booking",
         "is_categorical": true,
@@ -3126,6 +3115,17 @@
           "2",
           "3",
           "4"
+        ]
+      },
+      {
+        "name": "seating_class",
+        "description": "Seating class for the booking",
+        "is_categorical": true,
+        "possible_values": [
+          "Economy",
+          "Premium Economy",
+          "Business",
+          "First Class"
         ]
       },
       {
@@ -3407,14 +3407,14 @@
         ]
       },
       {
-        "name": "passengers",
-        "description": "Number of passengers to book tickets for",
+        "name": "seating_class",
+        "description": "Seating class for the flight tickets",
         "is_categorical": true,
         "possible_values": [
-          "1",
-          "2",
-          "3",
-          "4"
+          "Economy",
+          "Premium Economy",
+          "Business",
+          "First Class"
         ]
       },
       {
@@ -3424,6 +3424,17 @@
         "possible_values": [
           "0",
           "1"
+        ]
+      },
+      {
+        "name": "passengers",
+        "description": "Number of passengers to book tickets for",
+        "is_categorical": true,
+        "possible_values": [
+          "1",
+          "2",
+          "3",
+          "4"
         ]
       },
       {
@@ -3439,17 +3450,6 @@
           "British Airways",
           "Air Canada",
           "Air France"
-        ]
-      },
-      {
-        "name": "seating_class",
-        "description": "Seating class for the flight tickets",
-        "is_categorical": true,
-        "possible_values": [
-          "Economy",
-          "Premium Economy",
-          "Business",
-          "First Class"
         ]
       }
     ],
@@ -3664,12 +3664,6 @@
         ]
       },
       {
-        "name": "rating",
-        "description": "Review rating of the house",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
         "name": "address",
         "description": "Address of the house",
         "is_categorical": false,
@@ -3686,6 +3680,12 @@
           "4",
           "5"
         ]
+      },
+      {
+        "name": "rating",
+        "description": "Review rating of the house",
+        "is_categorical": false,
+        "possible_values": []
       }
     ],
     "slots": [
@@ -3834,16 +3834,6 @@
         ]
       },
       {
-        "name": "number_of_rooms",
-        "description": "Number of rooms to book",
-        "is_categorical": true,
-        "possible_values": [
-          "1",
-          "2",
-          "3"
-        ]
-      },
-      {
         "name": "average_rating",
         "description": "Average review rating for the hotel",
         "is_categorical": false,
@@ -3854,6 +3844,16 @@
         "description": "Address of the hotel",
         "is_categorical": false,
         "possible_values": []
+      },
+      {
+        "name": "number_of_rooms",
+        "description": "Number of rooms to book",
+        "is_categorical": true,
+        "possible_values": [
+          "1",
+          "2",
+          "3"
+        ]
       }
     ],
     "slots": [
@@ -3969,6 +3969,15 @@
     "description": "A leading provider of movies for searching and watching on-demand",
     "entities": [
       {
+        "name": "System.Boolean",
+        "description": "Boolean flag indicating if subtitles are desired for this movie",
+        "is_categorical": true,
+        "possible_values": [
+          "True",
+          "False"
+        ]
+      },
+      {
         "name": "System.Person",
         "description": "Name of the director of the movie",
         "is_categorical": false,
@@ -3985,15 +3994,6 @@
         "description": "Genre of the movie",
         "is_categorical": false,
         "possible_values": []
-      },
-      {
-        "name": "subtitles",
-        "description": "Boolean flag indicating if subtitles are desired for this movie",
-        "is_categorical": true,
-        "possible_values": [
-          "True",
-          "False"
-        ]
       }
     ],
     "slots": [
@@ -4013,7 +4013,7 @@
       },
       {
         "name": "subtitles",
-        "type": "subtitles",
+        "type": "System.Boolean",
         "description": "Boolean flag indicating if subtitles are desired for this movie",
         "is_categorical": true,
         "possible_values": [
@@ -4089,16 +4089,6 @@
         "possible_values": []
       },
       {
-        "name": "show_type",
-        "description": "Type of show",
-        "is_categorical": true,
-        "possible_values": [
-          "regular",
-          "3d",
-          "imax"
-        ]
-      },
-      {
         "name": "movie_name",
         "description": "Name of the movie",
         "is_categorical": false,
@@ -4118,6 +4108,16 @@
           "7",
           "8",
           "9"
+        ]
+      },
+      {
+        "name": "show_type",
+        "description": "Type of show",
+        "is_categorical": true,
+        "possible_values": [
+          "regular",
+          "3d",
+          "imax"
         ]
       },
       {
@@ -4274,18 +4274,6 @@
         "possible_values": []
       },
       {
-        "name": "album",
-        "description": "Album the song belongs to",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "genre",
-        "description": "Genre of the song",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
         "name": "playback_device",
         "description": "Playback device on which the song is to be played",
         "is_categorical": true,
@@ -4298,6 +4286,18 @@
       {
         "name": "song_name",
         "description": "Name of the song",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "album",
+        "description": "Album the song belongs to",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "genre",
+        "description": "Genre of the song",
         "is_categorical": false,
         "possible_values": []
       }
@@ -4398,12 +4398,6 @@
         "possible_values": []
       },
       {
-        "name": "pickup_location",
-        "description": "Pickup location for car rental",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
         "name": "car_type",
         "description": "Type of car for rental",
         "is_categorical": true,
@@ -4416,6 +4410,12 @@
       {
         "name": "car_name",
         "description": "Name of car model",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "pickup_location",
+        "description": "Pickup location for car rental",
         "is_categorical": false,
         "possible_values": []
       }
@@ -4523,6 +4523,18 @@
         "possible_values": []
       },
       {
+        "name": "date",
+        "description": "Date for the reservation or to find availability",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "time",
+        "description": "Time for the reservation or to find availability",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
         "name": "System.Boolean",
         "description": "Boolean flag indicating if the restaurant serves alcohol",
         "is_categorical": true,
@@ -4544,8 +4556,8 @@
         "possible_values": []
       },
       {
-        "name": "date",
-        "description": "Date for the reservation or to find availability",
+        "name": "street_address",
+        "description": "Address of the restaurant",
         "is_categorical": false,
         "possible_values": []
       },
@@ -4572,18 +4584,6 @@
           "expensive",
           "very expensive"
         ]
-      },
-      {
-        "name": "time",
-        "description": "Time for the reservation or to find availability",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "street_address",
-        "description": "Address of the restaurant",
-        "is_categorical": false,
-        "possible_values": []
       },
       {
         "name": "cuisine",
@@ -4749,17 +4749,6 @@
         "possible_values": []
       },
       {
-        "name": "number_of_seats",
-        "description": "Number of seats to reserve in the cab",
-        "is_categorical": true,
-        "possible_values": [
-          "1",
-          "2",
-          "3",
-          "4"
-        ]
-      },
-      {
         "name": "destination",
         "description": "Destination address or location for cab",
         "is_categorical": false,
@@ -4773,6 +4762,17 @@
           "Pool",
           "Regular",
           "Luxury"
+        ]
+      },
+      {
+        "name": "number_of_seats",
+        "description": "Number of seats to reserve in the cab",
+        "is_categorical": true,
+        "possible_values": [
+          "1",
+          "2",
+          "3",
+          "4"
         ]
       }
     ],
@@ -4880,14 +4880,14 @@
         "possible_values": []
       },
       {
-        "name": "street_address",
-        "description": "Address of the stylist/salon",
+        "name": "average_rating",
+        "description": "Average review rating for the stylist/salon",
         "is_categorical": false,
         "possible_values": []
       },
       {
-        "name": "average_rating",
-        "description": "Average review rating for the stylist/salon",
+        "name": "street_address",
+        "description": "Address of the stylist/salon",
         "is_categorical": false,
         "possible_values": []
       }
@@ -5112,7 +5112,7 @@
     "description": "A popular provider for finding the right doctor for your needs. Also allows you to schedule your visit to the doctor",
     "entities": [
       {
-        "name": "System.Person",
+        "name": "System.String",
         "description": "Name of the doctor or the medical practice",
         "is_categorical": false,
         "possible_values": []
@@ -5142,18 +5142,6 @@
         "possible_values": []
       },
       {
-        "name": "average_rating",
-        "description": "Average review rating of the doctor",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
-        "name": "street_address",
-        "description": "Address of the doctor",
-        "is_categorical": false,
-        "possible_values": []
-      },
-      {
         "name": "type",
         "description": "Speciality of the doctor",
         "is_categorical": true,
@@ -5164,12 +5152,24 @@
           "General Practitioner",
           "Dermatologist"
         ]
+      },
+      {
+        "name": "average_rating",
+        "description": "Average review rating of the doctor",
+        "is_categorical": false,
+        "possible_values": []
+      },
+      {
+        "name": "street_address",
+        "description": "Address of the doctor",
+        "is_categorical": false,
+        "possible_values": []
       }
     ],
     "slots": [
       {
         "name": "doctor_name",
-        "type": "System.Person",
+        "type": "System.String",
         "description": "Name of the doctor or the medical practice",
         "is_categorical": false,
         "possible_values": []
